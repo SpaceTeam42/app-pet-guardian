@@ -7,7 +7,7 @@ import { RFValue } from 'react-native-responsive-fontsize';
 
 import { Feather } from '@expo/vector-icons';
 
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { z as zod } from 'zod';
 
@@ -125,7 +125,7 @@ export function SignUpScreen() {
   const [photoTutor, setPhotoTutor] = useState('');
   const [isPersonalPhoneWhatsApp, setIsPersonalPhoneWhatsApp] = useState(false);
   const [isPublicPhoneWhatsApp, setIsPublicPhoneWhatsApp] = useState(false);
-  const [searchPostalCode, setSearchPostalCode] = useState('');
+  // const [searchPostalCode, setSearchPostalCode] = useState('');
   const [selectedUF, setSelectedUF] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [citiesSelectPicker, setCitiesSelectPicker] = useState<
@@ -152,7 +152,10 @@ export function SignUpScreen() {
   const complementRef = useRef<TextInput>(null);
   const referenceRef = useRef<TextInput>(null);
 
-  const { control, handleSubmit, reset, setValue } = useForm<IFormData>();
+  const { control, handleSubmit, reset, setValue, watch } =
+    useForm<IFormData>();
+
+  const searchPostalCode = watch('postal_code');
 
   // MEMO
   const chevronIconSelectPicker = useMemo(() => {
@@ -447,20 +450,6 @@ export function SignUpScreen() {
 
         setIsLoading(false);
 
-        if (err instanceof Yup.ValidationError) {
-          const errors = getValidationErrors(err);
-
-          formRef.current?.setErrors(errors);
-
-          return;
-        }
-
-        if (err instanceof AxiosError) {
-          if (err.response) {
-            console.log(JSON.stringify(err.response, null, 2));
-          }
-        }
-
         Toast.show({
           type: 'error',
           position: 'bottom',
@@ -493,10 +482,10 @@ export function SignUpScreen() {
             <PhotoButton>
               {photoTutor === '' ? (
                 <BoxWithoutPhoto>
-                  <FeatherIcons
+                  <Feather
                     name="user"
                     size={120}
-                    color={theme.colors['gray-color']}
+                    color={theme.COLORS.GRAY_500}
                   />
                 </BoxWithoutPhoto>
               ) : (
@@ -512,322 +501,408 @@ export function SignUpScreen() {
               <BoxPhotoCameraIconButton
                 onPress={handleToggleTakePhotoTutorModal}
               >
-                <FeatherIcons
-                  name="camera"
-                  size={24}
-                  color={theme.colors['white-color']}
-                />
+                <Feather name="camera" size={24} color={theme.COLORS.WHITE} />
               </BoxPhotoCameraIconButton>
 
               {photoTutor !== '' && (
                 <BoxPhotoDeleteIconButton onPress={handleDeletePhoto}>
-                  <FeatherIcons
-                    name="x"
-                    size={24}
-                    color={theme.colors['white-color']}
-                  />
+                  <Feather name="x" size={24} color={theme.COLORS.WHITE} />
                 </BoxPhotoDeleteIconButton>
               )}
             </PhotoButton>
           </BoxPhoto>
 
-          <Form ref={formRef} onSubmit={handleFormSubmit}>
-            <Input
-              ref={nameRef}
-              name="name"
-              label="Nome"
-              autoCorrect={false}
-              autoCapitalize="words"
-              editable={!loading}
-              returnKeyType="next"
-            />
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={nameRef}
+                label="Nome"
+                autoCorrect={false}
+                autoCapitalize="words"
+                editable={!loading}
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                }}
+                returnKeyType="next"
+              />
+            )}
+          />
 
-            <InputMask
-              ref={cpfRef}
-              name="cnpj_cpf"
-              label="CPF"
-              type="cpf"
-              editable={!loading}
-              keyboardType="numeric"
-              returnKeyType="next"
-            />
-
-            <Input
-              ref={emailRef}
-              name="email"
-              label="E-mail"
-              editable={!loading}
-              keyboardType="email-address"
-              returnKeyType="next"
-            />
-
-            <Input
-              ref={passwordRef}
-              name="password"
-              label="Senha"
-              editable={!loading}
-              secureTextFieldEntry
-              returnKeyType="next"
-            />
-
-            <Label>DDD + telefone (utilizado para entrarmos em contato)</Label>
-            <BoxPhoneWhatsApp>
+          <Controller
+            control={control}
+            name="cnpj_cpf"
+            render={({ field: { value, onChange } }) => (
               <InputMask
-                ref={phoneRef}
-                name="personal_phone"
-                type="cel-phone"
+                label="CPF"
+                type="cpf"
                 editable={!loading}
                 keyboardType="numeric"
                 returnKeyType="next"
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                }}
               />
+            )}
+          />
 
-              <WhatsAppCheckButton onPress={handlePersonalPhoneWhatsAppCheck}>
-                <FeatherIcons
-                  name={isPersonalPhoneWhatsApp ? 'check-square' : 'square'}
-                  size={RFValue(25)}
-                  color={
-                    isPersonalPhoneWhatsApp
-                      ? theme.colors['primary-color']
-                      : theme.colors['gray-color']
-                  }
-                />
-
-                <WhatsAppCheckButtonText>{`What's app`}</WhatsAppCheckButtonText>
-              </WhatsAppCheckButton>
-            </BoxPhoneWhatsApp>
-
-            <Label>DDD + telefone (visível ao público)</Label>
-            <BoxPhoneWhatsApp>
-              <InputMask
-                ref={phoneRef}
-                name="public_phone"
-                type="cel-phone"
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={emailRef}
+                label="E-mail"
                 editable={!loading}
-                keyboardType="numeric"
+                keyboardType="email-address"
                 returnKeyType="next"
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                }}
               />
+            )}
+          />
 
-              <WhatsAppCheckButton onPress={handlePublicPhoneWhatsAppCheck}>
-                <FeatherIcons
-                  name={isPublicPhoneWhatsApp ? 'check-square' : 'square'}
-                  size={RFValue(25)}
-                  color={
-                    isPublicPhoneWhatsApp
-                      ? theme.colors['primary-color']
-                      : theme.colors['gray-color']
-                  }
-                />
-
-                <WhatsAppCheckButtonText>{`What's app`}</WhatsAppCheckButtonText>
-              </WhatsAppCheckButton>
-            </BoxPhoneWhatsApp>
-
-            <BoxPostalCode>
-              <InputMask
-                ref={postalCodeRef}
-                name="postal_code"
-                label="CEP"
-                type="zip-code"
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={passwordRef}
+                label="Senha"
                 editable={!loading}
-                value={searchPostalCode}
-                onChangeText={(value) => {
-                  setSearchPostalCode(value);
-                }}
+                secureTextFieldEntry
                 returnKeyType="next"
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                }}
               />
+            )}
+          />
 
-              <SearchPostalCodeButton onPress={handleSearchAddressByPostalCode}>
-                <FeatherIcons
-                  name="search"
-                  size={25}
-                  color={theme.colors['white-color']}
+          <Label>DDD + telefone (utilizado para entrarmos em contato)</Label>
+          <BoxPhoneWhatsApp>
+            <Controller
+              control={control}
+              name="personal_phone"
+              render={({ field: { value, onChange } }) => (
+                <InputMask
+                  type="cel-phone"
+                  editable={!loading}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  value={value}
+                  onChangeText={(text) => {
+                    onChange(text);
+                  }}
                 />
-              </SearchPostalCodeButton>
-            </BoxPostalCode>
-
-            <Input
-              ref={streetNameRef}
-              name="street_name"
-              label="Endereço"
-              autoCorrect={false}
-              editable={!loading}
-              returnKeyType="next"
+              )}
             />
 
-            <Input
-              ref={streetNumberRef}
-              name="street_number"
-              label="Número"
-              editable={!loading}
-              returnKeyType="next"
+            <WhatsAppCheckButton onPress={handlePersonalPhoneWhatsAppCheck}>
+              <Feather
+                name={isPersonalPhoneWhatsApp ? 'check-square' : 'square'}
+                size={RFValue(25)}
+                color={
+                  isPersonalPhoneWhatsApp
+                    ? theme.COLORS['primary-color']
+                    : theme.COLORS.GRAY_500
+                }
+              />
+
+              <WhatsAppCheckButtonText>{`What's app`}</WhatsAppCheckButtonText>
+            </WhatsAppCheckButton>
+          </BoxPhoneWhatsApp>
+
+          <Label>DDD + telefone (visível ao público)</Label>
+          <BoxPhoneWhatsApp>
+            <Controller
+              control={control}
+              name="public_phone"
+              render={({ field: { value, onChange } }) => (
+                <InputMask
+                  type="cel-phone"
+                  editable={!loading}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  value={value}
+                  onChangeText={(text) => {
+                    onChange(text);
+                  }}
+                />
+              )}
             />
 
-            <Input
-              ref={neighborhoodRef}
-              name="neighborhood"
-              label="Bairro"
-              editable={!loading}
-              returnKeyType="next"
+            <WhatsAppCheckButton onPress={handlePublicPhoneWhatsAppCheck}>
+              <Feather
+                name={isPublicPhoneWhatsApp ? 'check-square' : 'square'}
+                size={RFValue(25)}
+                color={
+                  isPublicPhoneWhatsApp
+                    ? theme.COLORS['primary-color']
+                    : theme.COLORS.GRAY_500
+                }
+              />
+
+              <WhatsAppCheckButtonText>{`What's app`}</WhatsAppCheckButtonText>
+            </WhatsAppCheckButton>
+          </BoxPhoneWhatsApp>
+
+          <BoxPostalCode>
+            <Controller
+              control={control}
+              name="postal_code"
+              render={({ field: { value, onChange } }) => (
+                <InputMask
+                  label="CEP"
+                  type="zip-code"
+                  editable={!loading}
+                  value={value}
+                  onChangeText={(value) => {
+                    onChange(value);
+                  }}
+                  returnKeyType="next"
+                />
+              )}
             />
 
-            <Input
-              ref={complementRef}
-              name="complement"
-              label="Complemento"
-              editable={!loading}
-              returnKeyType="next"
-            />
+            <SearchPostalCodeButton onPress={handleSearchAddressByPostalCode}>
+              <Feather name="search" size={25} color={theme.COLORS.WHITE} />
+            </SearchPostalCodeButton>
+          </BoxPostalCode>
 
-            <Input
-              ref={referenceRef}
-              name="reference"
-              label="Ponto de referência"
-              editable={!loading}
-              returnKeyType="next"
-            />
-
-            <BoxState>
-              <Label>Estado</Label>
-
-              <RNPickerSelect
-                placeholder={{
-                  label: 'Selecione um estado',
-                  value: '',
-                }}
-                useNativeAndroidPickerStyle={false}
-                disabled={loading}
-                items={loadUF()}
-                onValueChange={(value) => handleSelectedUF(value)}
-                value={selectedUF}
-                Icon={() => {
-                  return chevronIconSelectPicker;
-                }}
-                style={{
-                  placeholder: {
-                    color: theme.colors['black-color'],
-                  },
-                  iconContainer: {
-                    top: 13,
-                    right: 3,
-                  },
-                  inputIOS: {
-                    height: 50,
-
-                    fontSize: 16,
-                    color: theme.colors['black-color'],
-
-                    paddingVertical: 10,
-                    paddingHorizontal: 23,
-
-                    borderWidth: 2,
-                    borderColor: theme.colors['gray-light-color'],
-                    borderRadius: 8,
-
-                    paddingRight: 30, // to ensure the text is never behind the icon
-
-                    backgroundColor: theme.colors['white-color'],
-                  },
-                  inputAndroid: {
-                    width: '100%',
-                    height: 50,
-
-                    fontSize: 16,
-                    color: theme.colors['black-color'],
-
-                    paddingHorizontal: 23,
-                    paddingVertical: 8,
-
-                    borderWidth: 2,
-                    borderColor: theme.colors['gray-light-color'],
-                    borderRadius: 8,
-
-                    paddingRight: 30, // to ensure the text is never behind the icon
-
-                    backgroundColor: theme.colors['white-color'],
-                  },
+          <Controller
+            control={control}
+            name="street_name"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={streetNameRef}
+                label="Endereço"
+                autoCorrect={false}
+                editable={!loading}
+                returnKeyType="next"
+                value={value}
+                onChange={(text) => {
+                  onChange(text);
                 }}
               />
-            </BoxState>
+            )}
+          />
 
-            <BoxCity>
-              <Label>Cidade</Label>
-
-              <RNPickerSelect
-                placeholder={{
-                  label: 'Selecione uma cidade',
-                  value: '',
-                }}
-                useNativeAndroidPickerStyle={false}
-                disabled={citiesSelectPicker.length === 0 || loading}
-                items={citiesSelectPicker}
-                onValueChange={(value) => setSelectedCity(value)}
-                value={selectedCity}
-                Icon={() => {
-                  return chevronIconSelectPicker;
-                }}
-                style={{
-                  placeholder: {
-                    color: theme.colors['black-color'],
-                  },
-                  iconContainer: {
-                    top: 13,
-                    right: 3,
-                  },
-                  inputIOS: {
-                    height: 50,
-
-                    fontSize: 16,
-                    color: theme.colors['black-color'],
-
-                    paddingVertical: 10,
-                    paddingHorizontal: 23,
-
-                    borderWidth: 2,
-                    borderColor: theme.colors['gray-light-color'],
-                    borderRadius: 8,
-
-                    paddingRight: 30, // to ensure the text is never behind the icon
-
-                    backgroundColor: theme.colors['white-color'],
-                  },
-                  inputAndroid: {
-                    width: '100%',
-                    height: 50,
-
-                    fontSize: 16,
-                    color: theme.colors['black-color'],
-
-                    paddingHorizontal: 23,
-                    paddingVertical: 8,
-
-                    borderWidth: 2,
-                    borderColor: theme.colors['gray-light-color'],
-                    borderRadius: 8,
-
-                    paddingRight: 30, // to ensure the text is never behind the icon
-
-                    backgroundColor: theme.colors['white-color'],
-                  },
+          <Controller
+            control={control}
+            name="street_number"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={streetNumberRef}
+                label="Número"
+                editable={!loading}
+                returnKeyType="next"
+                value={value}
+                onChange={(text) => {
+                  onChange(text);
                 }}
               />
-            </BoxCity>
+            )}
+          />
 
-            <Footer>
-              <Button
-                loading={loading}
-                onPress={() => {
-                  formRef.current?.submitForm();
+          <Controller
+            control={control}
+            name="neighborhood"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={neighborhoodRef}
+                label="Bairro"
+                editable={!loading}
+                returnKeyType="next"
+                value={value}
+                onChange={(text) => {
+                  onChange(text);
                 }}
-              >
-                Criar conta
-              </Button>
-            </Footer>
-          </Form>
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="complement"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={complementRef}
+                label="Complemento"
+                editable={!loading}
+                returnKeyType="next"
+                value={value}
+                onChange={(text) => {
+                  onChange(text);
+                }}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="reference"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={referenceRef}
+                label="Ponto de referência"
+                editable={!loading}
+                returnKeyType="next"
+                value={value}
+                onChange={(text) => {
+                  onChange(text);
+                }}
+              />
+            )}
+          />
+
+          <BoxState>
+            <Label>Estado</Label>
+
+            <RNPickerSelect
+              placeholder={{
+                label: 'Selecione um estado',
+                value: '',
+              }}
+              useNativeAndroidPickerStyle={false}
+              disabled={loading}
+              items={loadUF()}
+              onValueChange={(value) => handleSelectedUF(value)}
+              value={selectedUF}
+              Icon={() => {
+                return chevronIconSelectPicker;
+              }}
+              style={{
+                placeholder: {
+                  color: theme.colors['black-color'],
+                },
+                iconContainer: {
+                  top: 13,
+                  right: 3,
+                },
+                inputIOS: {
+                  height: 50,
+
+                  fontSize: 16,
+                  color: theme.colors['black-color'],
+
+                  paddingVertical: 10,
+                  paddingHorizontal: 23,
+
+                  borderWidth: 2,
+                  borderColor: theme.colors['gray-light-color'],
+                  borderRadius: 8,
+
+                  paddingRight: 30, // to ensure the text is never behind the icon
+
+                  backgroundColor: theme.colors['white-color'],
+                },
+                inputAndroid: {
+                  width: '100%',
+                  height: 50,
+
+                  fontSize: 16,
+                  color: theme.colors['black-color'],
+
+                  paddingHorizontal: 23,
+                  paddingVertical: 8,
+
+                  borderWidth: 2,
+                  borderColor: theme.colors['gray-light-color'],
+                  borderRadius: 8,
+
+                  paddingRight: 30, // to ensure the text is never behind the icon
+
+                  backgroundColor: theme.colors['white-color'],
+                },
+              }}
+            />
+          </BoxState>
+
+          <BoxCity>
+            <Label>Cidade</Label>
+
+            <RNPickerSelect
+              placeholder={{
+                label: 'Selecione uma cidade',
+                value: '',
+              }}
+              useNativeAndroidPickerStyle={false}
+              disabled={citiesSelectPicker.length === 0 || loading}
+              items={citiesSelectPicker}
+              onValueChange={(value) => setSelectedCity(value)}
+              value={selectedCity}
+              Icon={() => {
+                return chevronIconSelectPicker;
+              }}
+              style={{
+                placeholder: {
+                  color: theme.colors['black-color'],
+                },
+                iconContainer: {
+                  top: 13,
+                  right: 3,
+                },
+                inputIOS: {
+                  height: 50,
+
+                  fontSize: 16,
+                  color: theme.colors['black-color'],
+
+                  paddingVertical: 10,
+                  paddingHorizontal: 23,
+
+                  borderWidth: 2,
+                  borderColor: theme.colors['gray-light-color'],
+                  borderRadius: 8,
+
+                  paddingRight: 30, // to ensure the text is never behind the icon
+
+                  backgroundColor: theme.colors['white-color'],
+                },
+                inputAndroid: {
+                  width: '100%',
+                  height: 50,
+
+                  fontSize: 16,
+                  color: theme.colors['black-color'],
+
+                  paddingHorizontal: 23,
+                  paddingVertical: 8,
+
+                  borderWidth: 2,
+                  borderColor: theme.colors['gray-light-color'],
+                  borderRadius: 8,
+
+                  paddingRight: 30, // to ensure the text is never behind the icon
+
+                  backgroundColor: theme.colors['white-color'],
+                },
+              }}
+            />
+          </BoxCity>
+
+          <Footer>
+            <Button
+              loading={loading}
+              onPress={() => {
+                handleSubmit(handleFormSubmit);
+              }}
+            >
+              Criar conta
+            </Button>
+          </Footer>
         </Content>
       </ScrollView>
 
       {/* TOAST AND MODALS */}
-      <ToastMessage />
+      {/* <ToastMessage /> */}
 
       <LoadingModal modalVisible={loadingModal} />
 
