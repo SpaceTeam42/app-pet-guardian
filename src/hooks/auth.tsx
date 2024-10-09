@@ -4,19 +4,22 @@ import {
   useEffect,
   useState,
   useCallback,
+  ReactNode,
 } from 'react';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ITutor } from 'src/dtos/tutor-dto';
 
 import { api } from '@libs/api';
-
-interface ITutor {
-  id: string;
-  name: string;
-  email: string;
-  type: 'TUTOR';
-  avatar_url: string;
-}
+import {
+  storageTutorGet,
+  storageTutorRemove,
+  storageTutorSave,
+} from '@storage/storage-tutor';
+import {
+  storageAuthTokenGet,
+  storageAuthTokenRemove,
+  storageAuthTokenSave,
+} from '@storage/storage-auth-token';
 
 interface IAuthState {
   tutor: ITutor;
@@ -29,163 +32,138 @@ interface ICredentials {
   password: string;
 }
 
-interface INotification {
-  notification_token: string;
-}
-
-interface IAuthContextData {
+interface IAuthContextDataProps {
   tutor: ITutor;
-  loading: boolean;
+  isLoadingStorageData: boolean;
   signIn({ email, password }: ICredentials): Promise<void>;
   signOut(): Promise<void>;
   updateTutor(tutor: ITutor): Promise<void>;
-  updateToken(): Promise<void>;
-  updateNotificationToken({ notification_token }: INotification): Promise<void>;
 }
 
-interface IProviderProps {
-  children: React.ReactNode;
+interface IAuthProviderProps {
+  children: ReactNode;
 }
 
-const TUTOR_KEY_LOCALSTORAGE = '@GenerationPet:tutor';
-const TOKEN_KEY_LOCALSTORAGE = '@GenerationPet:token';
-const REFRESH_TOKEN_KEY_LOCALSTORAGE = '@GenerationPet:refresh_token';
-const NOTIFICATION_KEY_LOCALSTORAGE = '@GenerationPet:notification_token';
+const AuthContext = createContext<IAuthContextDataProps>(
+  {} as IAuthContextDataProps,
+);
 
-const AuthContext = createContext<IAuthContextData>({} as IAuthContextData);
+const AuthProvider = ({ children }: IAuthProviderProps) => {
+  const [tutor, setTutor] = useState<ITutor>({} as ITutor);
+  const [isLoadingUserStorageData, setIsLoadingUserStorageData] =
+    useState(true);
 
-const AuthProvider = ({ children }: IProviderProps) => {
-  const [data, setData] = useState<IAuthState>({} as IAuthState);
-  const [loading, setLoading] = useState(true);
+  // FUNCTIONS
+  const userAndTokenUpdate = useCallback(
+    async (tutorData: ITutor, token: string) => {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-  const updateNotificationToken = useCallback(
-    async ({ notification_token }: INotification) => {
-      console.log('update notification', notification_token);
+      setTutor(tutorData);
+    },
+    [],
+  );
+
+  const storageUserAndTokenSave = useCallback(
+    async (tutorData: ITutor, token: string, refresh_token: string) => {
+      try {
+        setIsLoadingUserStorageData(true);
+
+        await storageTutorSave(tutorData);
+        await storageAuthTokenSave({ token, refresh_token });
+      } catch (error) {
+        throw error;
+      } finally {
+        setIsLoadingUserStorageData(false);
+      }
     },
     [],
   );
 
   const signIn = useCallback(
     async ({ email, password }: ICredentials) => {
-      const response = await api.post('/authenticate_tutor/session', {
-        email,
-        password,
-      });
+      try {
+        const response = await api.post('/authenticate_tutor/session', {
+          email,
+          password,
+        });
 
-      if (response.status === 201) {
-        const { tutor, token, refresh_token } = response.data as IAuthState;
+        if (response.status === 201) {
+          const { tutor, token, refresh_token } = response.data as IAuthState;
 
-        if (tutor.type !== 'TUTOR') {
-          throw new Error('Profile invalid!');
+          if (tutor.type !== 'TUTOR') {
+            throw new Error('Profile invalid!');
+          }
+
+          await storageUserAndTokenSave(tutor, token, refresh_token);
+          await userAndTokenUpdate(tutor, token);
+
+          api.defaults.headers.common.Authorization = `Bearer ${token}`;
         }
-
-        await AsyncStorage.multiSet([
-          [TUTOR_KEY_LOCALSTORAGE, JSON.stringify(tutor)],
-          [TOKEN_KEY_LOCALSTORAGE, token],
-          [REFRESH_TOKEN_KEY_LOCALSTORAGE, refresh_token],
-        ]);
-
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
-
-        const notification_token = await AsyncStorage.getItem(
-          NOTIFICATION_KEY_LOCALSTORAGE,
-        );
-
-        if (notification_token) {
-          await updateNotificationToken({ notification_token: '' });
-        }
-
-        setData({ tutor, token, refresh_token });
+      } catch (error) {
+        throw error;
       }
     },
-    [updateNotificationToken],
+    [storageUserAndTokenSave, userAndTokenUpdate],
   );
 
   const signOut = useCallback(async () => {
-    await AsyncStorage.multiRemove([
-      TUTOR_KEY_LOCALSTORAGE,
-      TOKEN_KEY_LOCALSTORAGE,
-      REFRESH_TOKEN_KEY_LOCALSTORAGE,
-    ]);
+    try {
+      setIsLoadingUserStorageData(true);
 
-    setData({} as IAuthState);
+      setTutor({} as ITutor);
+
+      await storageTutorRemove();
+      await storageAuthTokenRemove();
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoadingUserStorageData(false);
+    }
   }, []);
 
-  const updateTutor = useCallback(
-    async (tutor: ITutor) => {
-      await AsyncStorage.setItem(TUTOR_KEY_LOCALSTORAGE, JSON.stringify(tutor));
+  const updateTutor = useCallback(async (tutor: ITutor) => {
+    setTutor(tutor);
 
-      setData({
-        tutor,
-        token: data.token,
-        refresh_token: data.refresh_token,
-      });
-    },
-    [data.token, data.refresh_token],
-  );
+    await storageTutorSave(tutor);
+  }, []);
 
-  const updateToken = useCallback(async () => {
-    const response = await api.post('/authenticate_tutor/refresh_token', {
-      refresh_token: data.refresh_token,
-    });
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoadingUserStorageData(true);
 
-    if (response.status === 201) {
-      const { token, refresh_token } = response.data;
+      const tutorLogged = await storageTutorGet();
+      const { token, refresh_token } = await storageAuthTokenGet();
 
-      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      if (tutorLogged && token && refresh_token) {
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-      await AsyncStorage.multiSet([
-        [TOKEN_KEY_LOCALSTORAGE, token],
-        [REFRESH_TOKEN_KEY_LOCALSTORAGE, refresh_token],
-      ]);
+        const response = await api.get('/tutors/me');
 
-      setData({
-        tutor: data.tutor,
-        token,
-        refresh_token,
-      });
+        if (response.status === 200) {
+          const { tutor } = response.data;
+
+          userAndTokenUpdate(tutor, token);
+        }
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoadingUserStorageData(false);
     }
-  }, [data.refresh_token, data.tutor]);
+  }, [userAndTokenUpdate]);
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const [token, refresh_token, notification_token] =
-          await AsyncStorage.multiGet([
-            TOKEN_KEY_LOCALSTORAGE,
-            REFRESH_TOKEN_KEY_LOCALSTORAGE,
-            NOTIFICATION_KEY_LOCALSTORAGE,
-          ]);
-
-        if (token[1] && refresh_token[1]) {
-          api.defaults.headers.common.Authorization = `Bearer ${token[1]}`;
-
-          if (notification_token[1]) {
-            await updateNotificationToken({ notification_token: '' });
-          }
-
-          const response = await api.get('/tutors/me');
-
-          if (response.status === 200) {
-            const { tutor } = response.data;
-
-            setData({
-              tutor,
-              token: token[1],
-              refresh_token: refresh_token[1],
-            });
-          }
-        }
-      } catch (err) {
-        // TODO - review error message
-        await signOut();
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadData();
-  }, [updateNotificationToken, signOut]);
+  }, [loadData]);
+
+  useEffect(() => {
+    const subscribe = api.registerInterceptTokenManager(signOut);
+
+    // LIMPEZA DE MEMÓRIA
+    return () => {
+      subscribe();
+    };
+  }, [signOut]);
 
   // useEffect(() => {
   //   async function loadStorageData() {
@@ -222,13 +200,11 @@ const AuthProvider = ({ children }: IProviderProps) => {
   return (
     <AuthContext.Provider
       value={{
-        tutor: data.tutor,
-        loading,
+        tutor,
+        isLoadingStorageData: isLoadingUserStorageData,
         signIn,
         signOut,
         updateTutor,
-        updateToken,
-        updateNotificationToken,
       }}
     >
       {children}
@@ -236,7 +212,7 @@ const AuthProvider = ({ children }: IProviderProps) => {
   );
 };
 
-function useAuth(): IAuthContextData {
+function useAuth(): IAuthContextDataProps {
   const context = useContext(AuthContext);
 
   if (!context) {

@@ -7,7 +7,7 @@ export function Loading() {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator size="large" color={theme.colors['pink-color']} />
+      <ActivityIndicator size="large" color={theme.COLORS.PINK_200} />
     </View>
   );
 }

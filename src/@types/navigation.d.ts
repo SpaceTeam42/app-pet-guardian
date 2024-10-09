@@ -1,9 +1,10 @@
 export declare global {
   namespace ReactNavigation {
     interface RootParamList {
-      homeDrawer: undefined;
+      homeDrawer: undefined | NonNullable<unknown>;
       homeTabs: undefined;
       homeScreen: undefined;
+      aboutScreen: undefined;
 
       detailPetScreen: { petId: string };
       adoptMeScannerScreen: { petId: string; oldTutorId: string };

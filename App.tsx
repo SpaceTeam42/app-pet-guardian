@@ -13,6 +13,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 
+import Toast from 'react-native-toast-message';
+
 import { ThemeProvider } from 'styled-components/native';
 
 import { AppProvider } from '@hooks/index';
@@ -21,7 +23,10 @@ import theme from './src/styles';
 
 import { queryClient } from './src/libs/react-query';
 
+import { toastConfig } from '@config/toast-config';
+
 import { Loading } from './src/components/Loading';
+import { Routes } from '@routes/index';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -43,7 +48,11 @@ export default function App() {
             // showHideTransition="slide"
           />
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <AppProvider>{fontsLoaded && <Loading />}</AppProvider>
+            <AppProvider>
+              {fontsLoaded ? <Routes /> : <Loading />}
+
+              <Toast config={toastConfig} />
+            </AppProvider>
           </GestureHandlerRootView>
         </SafeAreaProvider>
       </ThemeProvider>
