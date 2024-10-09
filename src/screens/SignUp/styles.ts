@@ -8,13 +8,13 @@ import { RFValue } from 'react-native-responsive-fontsize';
 
 import { Image } from 'expo-image';
 
-export const Container = styled.View`
+export const SignUpContainer = styled.View`
   flex: 1;
 
   background-color: ${({ theme }) => theme.COLORS['background-color']};
 `;
 
-export const Content = styled.View`
+export const SignUpContent = styled.View`
   flex: 1;
 
   padding: 0 ${RFValue(16)}px;

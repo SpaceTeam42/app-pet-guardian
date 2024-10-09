@@ -37,8 +37,8 @@ import { LoadingModal } from '@components/LoadingModal';
 import { ChooseTakePhotoModal } from '@components/ChooseTakePhotoModal';
 
 import {
-  Container,
-  Content,
+  SignUpContainer,
+  SignUpContent,
   BoxPhoto,
   BoxWithoutPhoto,
   PhotoButton,
@@ -55,6 +55,7 @@ import {
   BoxCity,
   Footer,
 } from './styles';
+import { useMutation } from '@tanstack/react-query';
 
 type ICity = {
   nome: string;
@@ -100,6 +101,8 @@ const signUpFormValidationSchema = zod.object({
   complement: zod.string().optional(),
   neighborhood: zod.string(),
   reference: zod.string().optional(),
+  state: zod.string(),
+  city: zod.string(),
 });
 
 type IFormData = zod.infer<typeof signUpFormValidationSchema>;
@@ -132,7 +135,6 @@ export function SignUpScreen() {
     ICitySelectPicker[]
   >([]);
   const [loadingModal, setIsLoadingModal] = useState(false);
-  const [loading, setIsLoading] = useState(false);
   // STATUS
 
   const theme = useTheme();
@@ -141,11 +143,8 @@ export function SignUpScreen() {
   const { signIn } = useAuth();
 
   const nameRef = useRef<TextInput>(null);
-  const cpfRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
-  const phoneRef = useRef<TextInput>(null);
-  const postalCodeRef = useRef<TextInput>(null);
   const streetNameRef = useRef<TextInput>(null);
   const streetNumberRef = useRef<TextInput>(null);
   const neighborhoodRef = useRef<TextInput>(null);
@@ -275,54 +274,56 @@ export function SignUpScreen() {
 
   const handleSearchAddressByPostalCode = useCallback(async () => {
     try {
-      const searchPostalCodeCopy = searchPostalCode;
+      if (searchPostalCode) {
+        const searchPostalCodeCopy = searchPostalCode;
 
-      const postalCode = searchPostalCodeCopy.replace(/\D/g, '');
+        const postalCode = searchPostalCodeCopy.replace(/\D/g, '');
 
-      if (postalCode !== '') {
-        const validatePostalCodeExpression = /^[0-9]{8}$/;
+        if (postalCode !== '') {
+          const validatePostalCodeExpression = /^[0-9]{8}$/;
 
-        if (validatePostalCodeExpression.test(postalCode)) {
-          setIsLoadingModal(true);
+          if (validatePostalCodeExpression.test(postalCode)) {
+            setIsLoadingModal(true);
 
-          const result = await axios.get(
-            `https://viacep.com.br/ws/${postalCode}/json/`,
-          );
+            const result = await axios.get(
+              `https://viacep.com.br/ws/${postalCode}/json/`,
+            );
 
-          const { erro } = result.data;
+            const { erro } = result.data;
 
-          if (erro) {
+            if (erro) {
+              Toast.show({
+                type: 'error',
+                position: 'bottom',
+                text2: 'CEP não encontrado',
+              });
+
+              reset();
+            } else {
+              const { logradouro, bairro, uf, localidade } =
+                result.data as IResultViaCEP;
+
+              setValue('street_name', logradouro);
+              setValue('neighborhood', bairro);
+              setSelectedUF(uf);
+              setSelectedCity(localidade);
+            }
+
+            setIsLoadingModal(false);
+          } else {
             Toast.show({
               type: 'error',
               position: 'bottom',
-              text2: 'CEP não encontrado',
+              text2: 'Formato de CEP inválido',
             });
-
-            reset();
-          } else {
-            const { logradouro, bairro, uf, localidade } =
-              result.data as IResultViaCEP;
-
-            setValue('street_name', logradouro);
-            setValue('neighborhood', bairro);
-            setSelectedUF(uf);
-            setSelectedCity(localidade);
           }
-
-          setIsLoadingModal(false);
         } else {
           Toast.show({
             type: 'error',
             position: 'bottom',
-            text2: 'Formato de CEP inválido',
+            text2: 'Informe o CEP',
           });
         }
-      } else {
-        Toast.show({
-          type: 'error',
-          position: 'bottom',
-          text2: 'Informe o CEP',
-        });
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -341,114 +342,117 @@ export function SignUpScreen() {
     }
   }, [searchPostalCode, reset, setValue]);
 
+  const {
+    mutateAsync: createAccountMutate,
+    isPending: isLoadingCreateAccount,
+  } = useMutation({
+    mutationFn: async (formSubmitData: IFormData) => {
+      if (photoTutor === '') {
+        Toast.show({
+          type: 'error',
+          position: 'bottom',
+          text2: 'Foto obrigatória',
+        });
+
+        return;
+      }
+
+      if (selectedUF === '') {
+        Toast.show({
+          type: 'error',
+          position: 'bottom',
+          text2: 'Selecione um estados',
+        });
+
+        return;
+      }
+
+      if (selectedCity === '') {
+        Toast.show({
+          type: 'error',
+          position: 'bottom',
+          text2: 'Selecione uma cidade',
+        });
+
+        return;
+      }
+
+      const formData = new FormData();
+
+      formData.append('name', formSubmitData.name);
+      formData.append('email', formSubmitData.email);
+      formData.append('password', formSubmitData.password);
+      formData.append('type', 'TUTOR');
+      formData.append('cnpj_cpf', formSubmitData.cnpj_cpf);
+      formData.append('personal_phone', formSubmitData.personal_phone);
+      formData.append(
+        'personal_phone_is_whatsapp',
+        isPersonalPhoneWhatsApp ? 'true' : 'false',
+      );
+      formData.append('public_phone', formSubmitData.public_phone);
+      formData.append(
+        'public_phone_is_whatsapp',
+        isPublicPhoneWhatsApp ? 'true' : 'false',
+      );
+      formData.append('street_name', formSubmitData.street_name);
+      formData.append('street_number', formSubmitData.street_number);
+      formData.append(
+        'complement',
+        formSubmitData.complement ? formSubmitData.complement : '',
+      );
+      formData.append('neighborhood', formSubmitData.neighborhood);
+      formData.append(
+        'postal_code',
+        formSubmitData.postal_code ? formSubmitData.postal_code : '',
+      );
+      formData.append(
+        'reference',
+        formSubmitData.reference ? formSubmitData.reference : '',
+      );
+      formData.append('state', selectedUF);
+      formData.append('city', selectedCity);
+
+      if (photoTutor !== '') {
+        const avatar = {
+          name: `img_${formSubmitData.cnpj_cpf}_${new Date()
+            .getTime()
+            .toString()}.jpg`,
+          type: 'image/*',
+          uri: photoTutor,
+        } as any;
+
+        formData.append('avatar', avatar);
+      }
+
+      const response = await api.post('/tutors', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        transformRequest: (data) => data,
+      });
+
+      if (response.status === 201) {
+        await signIn({
+          email: formSubmitData.email,
+          password: formSubmitData.password,
+        });
+
+        Toast.show({
+          type: 'success',
+          position: 'bottom',
+          text2: 'Criação de conta realizada com sucesso!',
+        });
+
+        navigation.navigate('homeDrawer', { screen: 'homeTabs' });
+        // navigation.navigate('HomeDrawer', { screen: 'HomeTabs' });
+      }
+    },
+  });
+
   const handleFormSubmit = useCallback(
     async (formSubmitData: IFormData) => {
       try {
-        setIsLoading(true);
-
-        if (photoTutor === '') {
-          Toast.show({
-            type: 'error',
-            position: 'bottom',
-            text2: 'Foto obrigatória',
-          });
-
-          return;
-        }
-
-        if (selectedUF === '') {
-          Toast.show({
-            type: 'error',
-            position: 'bottom',
-            text2: 'Selecione um estados',
-          });
-
-          return;
-        }
-
-        if (selectedCity === '') {
-          Toast.show({
-            type: 'error',
-            position: 'bottom',
-            text2: 'Selecione uma cidade',
-          });
-
-          return;
-        }
-
-        const formData = new FormData();
-
-        formData.append('name', formSubmitData.name);
-        formData.append('email', formSubmitData.email);
-        formData.append('password', formSubmitData.password);
-        formData.append('type', 'TUTOR');
-        formData.append('cnpj_cpf', formSubmitData.cnpj_cpf);
-        formData.append('personal_phone', formSubmitData.personal_phone);
-        formData.append(
-          'personal_phone_is_whatsapp',
-          isPersonalPhoneWhatsApp ? 'true' : 'false',
-        );
-        formData.append('public_phone', formSubmitData.public_phone);
-        formData.append(
-          'public_phone_is_whatsapp',
-          isPublicPhoneWhatsApp ? 'true' : 'false',
-        );
-        formData.append('street_name', formSubmitData.street_name);
-        formData.append('street_number', formSubmitData.street_number);
-        formData.append(
-          'complement',
-          formSubmitData.complement ? formSubmitData.complement : '',
-        );
-        formData.append('neighborhood', formSubmitData.neighborhood);
-        formData.append(
-          'postal_code',
-          formSubmitData.postal_code ? formSubmitData.postal_code : '',
-        );
-        formData.append(
-          'reference',
-          formSubmitData.reference ? formSubmitData.reference : '',
-        );
-        formData.append('state', selectedUF);
-        formData.append('city', selectedCity);
-
-        if (photoTutor !== '') {
-          const avatar = {
-            name: `img_${formSubmitData.cnpj_cpf}_${new Date()
-              .getTime()
-              .toString()}.jpg`,
-            type: 'image/*',
-            uri: photoTutor,
-          } as any;
-
-          formData.append('avatar', avatar);
-        }
-
-        const response = await api.post('/tutors', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          transformRequest: (data) => data,
-        });
-
-        if (response.status === 201) {
-          await signIn({
-            email: formSubmitData.email,
-            password: formSubmitData.password,
-          });
-
-          setIsLoading(false);
-
-          Toast.show({
-            type: 'success',
-            position: 'bottom',
-            text2: 'Criação de conta realizada com sucesso!',
-          });
-
-          navigation.navigate('homeDrawer', { screen: 'homeTabs' });
-          // navigation.navigate('HomeDrawer', { screen: 'HomeTabs' });
-        }
+        await createAccountMutate(formSubmitData);
       } catch (err) {
         console.log('error: ', err);
-
-        setIsLoading(false);
 
         Toast.show({
           type: 'error',
@@ -457,27 +461,19 @@ export function SignUpScreen() {
         });
       }
     },
-    [
-      selectedUF,
-      selectedCity,
-      isPersonalPhoneWhatsApp,
-      isPublicPhoneWhatsApp,
-      photoTutor,
-      navigation,
-      signIn,
-    ],
+    [createAccountMutate],
   );
   // END FUNCTIONS
 
   return (
-    <Container>
+    <SignUpContainer>
       <Header title="Crie sua conta" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Content>
+        <SignUpContent>
           <BoxPhoto>
             <PhotoButton>
               {photoTutor === '' ? (
@@ -521,7 +517,7 @@ export function SignUpScreen() {
                 label="Nome"
                 autoCorrect={false}
                 autoCapitalize="words"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 value={value}
                 onChangeText={(text) => {
                   onChange(text);
@@ -538,7 +534,7 @@ export function SignUpScreen() {
               <InputMask
                 label="CPF"
                 type="cpf"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 keyboardType="numeric"
                 returnKeyType="next"
                 value={value}
@@ -556,7 +552,7 @@ export function SignUpScreen() {
               <Input
                 ref={emailRef}
                 label="E-mail"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 keyboardType="email-address"
                 returnKeyType="next"
                 value={value}
@@ -574,7 +570,7 @@ export function SignUpScreen() {
               <Input
                 ref={passwordRef}
                 label="Senha"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 secureTextFieldEntry
                 returnKeyType="next"
                 value={value}
@@ -593,7 +589,7 @@ export function SignUpScreen() {
               render={({ field: { value, onChange } }) => (
                 <InputMask
                   type="cel-phone"
-                  editable={!loading}
+                  editable={!isLoadingCreateAccount}
                   keyboardType="numeric"
                   returnKeyType="next"
                   value={value}
@@ -627,7 +623,7 @@ export function SignUpScreen() {
               render={({ field: { value, onChange } }) => (
                 <InputMask
                   type="cel-phone"
-                  editable={!loading}
+                  editable={!isLoadingCreateAccount}
                   keyboardType="numeric"
                   returnKeyType="next"
                   value={value}
@@ -661,7 +657,7 @@ export function SignUpScreen() {
                 <InputMask
                   label="CEP"
                   type="zip-code"
-                  editable={!loading}
+                  editable={!isLoadingCreateAccount}
                   value={value}
                   onChangeText={(value) => {
                     onChange(value);
@@ -684,7 +680,7 @@ export function SignUpScreen() {
                 ref={streetNameRef}
                 label="Endereço"
                 autoCorrect={false}
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 returnKeyType="next"
                 value={value}
                 onChange={(text) => {
@@ -701,7 +697,7 @@ export function SignUpScreen() {
               <Input
                 ref={streetNumberRef}
                 label="Número"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 returnKeyType="next"
                 value={value}
                 onChange={(text) => {
@@ -718,7 +714,7 @@ export function SignUpScreen() {
               <Input
                 ref={neighborhoodRef}
                 label="Bairro"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 returnKeyType="next"
                 value={value}
                 onChange={(text) => {
@@ -735,7 +731,7 @@ export function SignUpScreen() {
               <Input
                 ref={complementRef}
                 label="Complemento"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 returnKeyType="next"
                 value={value}
                 onChange={(text) => {
@@ -752,7 +748,7 @@ export function SignUpScreen() {
               <Input
                 ref={referenceRef}
                 label="Ponto de referência"
-                editable={!loading}
+                editable={!isLoadingCreateAccount}
                 returnKeyType="next"
                 value={value}
                 onChange={(text) => {
@@ -765,132 +761,150 @@ export function SignUpScreen() {
           <BoxState>
             <Label>Estado</Label>
 
-            <RNPickerSelect
-              placeholder={{
-                label: 'Selecione um estado',
-                value: '',
-              }}
-              useNativeAndroidPickerStyle={false}
-              disabled={loading}
-              items={loadUF()}
-              onValueChange={(value) => handleSelectedUF(value)}
-              value={selectedUF}
-              Icon={() => {
-                return chevronIconSelectPicker;
-              }}
-              style={{
-                placeholder: {
-                  color: theme.colors['black-color'],
-                },
-                iconContainer: {
-                  top: 13,
-                  right: 3,
-                },
-                inputIOS: {
-                  height: 50,
+            <Controller
+              control={control}
+              name="state"
+              render={({ field: { value, onChange } }) => (
+                <RNPickerSelect
+                  placeholder={{
+                    label: 'Selecione um estado',
+                    value: '',
+                  }}
+                  useNativeAndroidPickerStyle={false}
+                  disabled={isLoadingCreateAccount}
+                  items={loadUF()}
+                  onValueChange={(value) => {
+                    onChange(value);
 
-                  fontSize: 16,
-                  color: theme.colors['black-color'],
+                    handleSelectedUF(value);
+                  }}
+                  value={value}
+                  Icon={() => {
+                    return chevronIconSelectPicker;
+                  }}
+                  style={{
+                    placeholder: {
+                      color: theme.colors['black-color'],
+                    },
+                    iconContainer: {
+                      top: 13,
+                      right: 3,
+                    },
+                    inputIOS: {
+                      height: 50,
 
-                  paddingVertical: 10,
-                  paddingHorizontal: 23,
+                      fontSize: 16,
+                      color: theme.colors['black-color'],
 
-                  borderWidth: 2,
-                  borderColor: theme.colors['gray-light-color'],
-                  borderRadius: 8,
+                      paddingVertical: 10,
+                      paddingHorizontal: 23,
 
-                  paddingRight: 30, // to ensure the text is never behind the icon
+                      borderWidth: 2,
+                      borderColor: theme.colors['gray-light-color'],
+                      borderRadius: 8,
 
-                  backgroundColor: theme.colors['white-color'],
-                },
-                inputAndroid: {
-                  width: '100%',
-                  height: 50,
+                      paddingRight: 30, // to ensure the text is never behind the icon
 
-                  fontSize: 16,
-                  color: theme.colors['black-color'],
+                      backgroundColor: theme.colors['white-color'],
+                    },
+                    inputAndroid: {
+                      width: '100%',
+                      height: 50,
 
-                  paddingHorizontal: 23,
-                  paddingVertical: 8,
+                      fontSize: 16,
+                      color: theme.colors['black-color'],
 
-                  borderWidth: 2,
-                  borderColor: theme.colors['gray-light-color'],
-                  borderRadius: 8,
+                      paddingHorizontal: 23,
+                      paddingVertical: 8,
 
-                  paddingRight: 30, // to ensure the text is never behind the icon
+                      borderWidth: 2,
+                      borderColor: theme.colors['gray-light-color'],
+                      borderRadius: 8,
 
-                  backgroundColor: theme.colors['white-color'],
-                },
-              }}
+                      paddingRight: 30, // to ensure the text is never behind the icon
+
+                      backgroundColor: theme.colors['white-color'],
+                    },
+                  }}
+                />
+              )}
             />
           </BoxState>
 
           <BoxCity>
             <Label>Cidade</Label>
 
-            <RNPickerSelect
-              placeholder={{
-                label: 'Selecione uma cidade',
-                value: '',
-              }}
-              useNativeAndroidPickerStyle={false}
-              disabled={citiesSelectPicker.length === 0 || loading}
-              items={citiesSelectPicker}
-              onValueChange={(value) => setSelectedCity(value)}
-              value={selectedCity}
-              Icon={() => {
-                return chevronIconSelectPicker;
-              }}
-              style={{
-                placeholder: {
-                  color: theme.colors['black-color'],
-                },
-                iconContainer: {
-                  top: 13,
-                  right: 3,
-                },
-                inputIOS: {
-                  height: 50,
+            <Controller
+              control={control}
+              name="city"
+              render={({ field: { value, onChange } }) => (
+                <RNPickerSelect
+                  placeholder={{
+                    label: 'Selecione uma cidade',
+                    value: '',
+                  }}
+                  useNativeAndroidPickerStyle={false}
+                  disabled={
+                    citiesSelectPicker.length === 0 || isLoadingCreateAccount
+                  }
+                  items={citiesSelectPicker}
+                  onValueChange={(value) => onChange(value)}
+                  value={value}
+                  Icon={() => {
+                    return chevronIconSelectPicker;
+                  }}
+                  style={{
+                    placeholder: {
+                      color: theme.colors['black-color'],
+                    },
+                    iconContainer: {
+                      top: 13,
+                      right: 3,
+                    },
+                    inputIOS: {
+                      height: 50,
 
-                  fontSize: 16,
-                  color: theme.colors['black-color'],
+                      fontSize: 16,
+                      color: theme.colors['black-color'],
 
-                  paddingVertical: 10,
-                  paddingHorizontal: 23,
+                      paddingVertical: 10,
+                      paddingHorizontal: 23,
 
-                  borderWidth: 2,
-                  borderColor: theme.colors['gray-light-color'],
-                  borderRadius: 8,
+                      borderWidth: 2,
+                      borderColor: theme.colors['gray-light-color'],
+                      borderRadius: 8,
 
-                  paddingRight: 30, // to ensure the text is never behind the icon
+                      paddingRight: 30, // to ensure the text is never behind the icon
 
-                  backgroundColor: theme.colors['white-color'],
-                },
-                inputAndroid: {
-                  width: '100%',
-                  height: 50,
+                      backgroundColor: theme.colors['white-color'],
+                    },
+                    inputAndroid: {
+                      width: '100%',
+                      height: 50,
 
-                  fontSize: 16,
-                  color: theme.colors['black-color'],
+                      fontSize: 16,
+                      color: theme.colors['black-color'],
 
-                  paddingHorizontal: 23,
-                  paddingVertical: 8,
+                      paddingHorizontal: 23,
+                      paddingVertical: 8,
 
-                  borderWidth: 2,
-                  borderColor: theme.colors['gray-light-color'],
-                  borderRadius: 8,
+                      borderWidth: 2,
+                      borderColor: theme.colors['gray-light-color'],
+                      borderRadius: 8,
 
-                  paddingRight: 30, // to ensure the text is never behind the icon
+                      paddingRight: 30, // to ensure the text is never behind the icon
 
-                  backgroundColor: theme.colors['white-color'],
-                },
-              }}
+                      backgroundColor: theme.colors['white-color'],
+                    },
+                  }}
+                />
+              )}
             />
           </BoxCity>
 
           <Footer>
             <Button
-              loading={loading}
+              loading={isLoadingCreateAccount}
               onPress={() => {
                 handleSubmit(handleFormSubmit);
               }}
@@ -898,7 +912,7 @@ export function SignUpScreen() {
               Criar conta
             </Button>
           </Footer>
-        </Content>
+        </SignUpContent>
       </ScrollView>
 
       {/* TOAST AND MODALS */}
@@ -912,6 +926,6 @@ export function SignUpScreen() {
         onTakePhotoCamera={handleTakePhoto}
         onTakePhotoGallery={handleTakeGallery}
       />
-    </Container>
+    </SignUpContainer>
   );
 }
