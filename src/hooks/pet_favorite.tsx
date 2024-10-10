@@ -4,9 +4,13 @@ import React, {
   useEffect,
   useCallback,
   useState,
+  ReactNode,
 } from 'react';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  petFavoriteGetAll,
+  petFavoriteRemove,
+} from '@storage/storage-pet-favorite';
 
 interface IPet {
   id: string;
@@ -20,7 +24,7 @@ interface IPet {
 
 interface IPetFavoriteContextData {
   loading: boolean;
-  petsFavorite: Array<IPet>;
+  petsFavorite: IPet[];
   verifyIsPetFavorite(petId: string): Promise<boolean>;
   getPetsFavorite(): Promise<IPet[]>;
   addPetFavorite(pet: IPet): Promise<void>;
@@ -28,10 +32,10 @@ interface IPetFavoriteContextData {
 }
 
 interface IPetProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-const PETS_FAVORITE_KEY_LOCALSTORAGE = '@GenerationPet:pets_favorites';
+// const PETS_FAVORITE_KEY_LOCALSTORAGE = '@GenerationPet:pets_favorites';
 
 const PetsFavoriteContext = createContext<IPetFavoriteContextData>(
   {} as IPetFavoriteContextData,
@@ -43,57 +47,39 @@ const PetsFavoriteProvider = ({ children }: IPetProviderProps) => {
 
   // FUNCTIONS
   const verifyIsPetFavorite = useCallback(async (petId: string) => {
-    const response = await AsyncStorage.getItem(PETS_FAVORITE_KEY_LOCALSTORAGE);
+    const petsFavorite = await petFavoriteGetAll();
 
-    if (response) {
-      const petsFavorite = JSON.parse(response) as IPet[];
+    const petFound = petsFavorite.some((pet) => pet.id === petId);
 
-      const petFound = petsFavorite.some(pet => pet.id === petId);
+    return petFound;
 
-      return petFound;
-    }
+    // const response = await AsyncStorage.getItem(PETS_FAVORITE_KEY_LOCALSTORAGE);
 
-    return false;
+    // if (response) {
+    //   const petsFavorite = JSON.parse(response) as IPet[];
+
+    //   const petFound = petsFavorite.some((pet) => pet.id === petId);
+
+    //   return petFound;
+    // }
+
+    // return false;
   }, []);
 
   const getPetsFavorite = useCallback(async () => {
-    const response = await AsyncStorage.getItem(PETS_FAVORITE_KEY_LOCALSTORAGE);
+    const response = petFavoriteGetAll();
 
-    if (response) {
-      const petsFavorite = JSON.parse(response) as IPet[];
-
-      return petsFavorite;
-    }
-
-    return [];
+    return response;
   }, []);
 
   const addPetFavorite = useCallback(async (petFavorite: IPet) => {
     setLoading(true);
 
-    const response = await AsyncStorage.getItem(PETS_FAVORITE_KEY_LOCALSTORAGE);
+    await addPetFavorite(petFavorite);
 
-    if (response) {
-      const petsFavorite = JSON.parse(response) as IPet[];
+    const petsFavorite = await petFavoriteGetAll();
 
-      const newPetFavorite = [...petsFavorite, petFavorite];
-
-      await AsyncStorage.setItem(
-        PETS_FAVORITE_KEY_LOCALSTORAGE,
-        JSON.stringify(newPetFavorite),
-      );
-
-      setData(newPetFavorite);
-    } else {
-      const newPetFavorite = [petFavorite];
-
-      await AsyncStorage.setItem(
-        PETS_FAVORITE_KEY_LOCALSTORAGE,
-        JSON.stringify(newPetFavorite),
-      );
-
-      setData(newPetFavorite);
-    }
+    setData(petsFavorite);
 
     setLoading(false);
   }, []);
@@ -101,24 +87,11 @@ const PetsFavoriteProvider = ({ children }: IPetProviderProps) => {
   const removePetFavorite = useCallback(async (petId: string) => {
     setLoading(true);
 
-    const responsePets = await AsyncStorage.getItem(
-      PETS_FAVORITE_KEY_LOCALSTORAGE,
-    );
+    await petFavoriteRemove(petId);
 
-    if (responsePets) {
-      const petsFavorite = JSON.parse(responsePets) as IPet[];
+    const petsFavorite = await petFavoriteGetAll();
 
-      const petsFavoriteFiltered = petsFavorite.filter(
-        petFavorite => petFavorite.id !== petId,
-      );
-
-      await AsyncStorage.setItem(
-        PETS_FAVORITE_KEY_LOCALSTORAGE,
-        JSON.stringify(petsFavoriteFiltered),
-      );
-
-      setData(petsFavoriteFiltered);
-    }
+    setData(petsFavorite);
 
     setLoading(false);
   }, []);
@@ -126,17 +99,9 @@ const PetsFavoriteProvider = ({ children }: IPetProviderProps) => {
 
   useEffect(() => {
     async function loadData() {
-      const response = await AsyncStorage.getItem(
-        PETS_FAVORITE_KEY_LOCALSTORAGE,
-      );
+      const petsFavorite = await petFavoriteGetAll();
 
-      if (response) {
-        const petsFavorite = JSON.parse(response) as IPet[];
-
-        setData(petsFavorite);
-      } else {
-        setData([]);
-      }
+      setData(petsFavorite);
     }
 
     loadData();

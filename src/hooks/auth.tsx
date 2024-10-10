@@ -10,15 +10,13 @@ import {
 import { ITutor } from 'src/dtos/tutor-dto';
 
 import { api } from '@libs/api';
+
+import { tutorGet, tutorRemove, tutorAdd } from '@storage/storage-tutor';
+
 import {
-  storageTutorGet,
-  storageTutorRemove,
-  storageTutorSave,
-} from '@storage/storage-tutor';
-import {
-  storageAuthTokenGet,
-  storageAuthTokenRemove,
-  storageAuthTokenSave,
+  authTokenGet,
+  authTokenRemove,
+  authTokenAdd,
 } from '@storage/storage-auth-token';
 
 interface IAuthState {
@@ -68,8 +66,8 @@ const AuthProvider = ({ children }: IAuthProviderProps) => {
       try {
         setIsLoadingUserStorageData(true);
 
-        await storageTutorSave(tutorData);
-        await storageAuthTokenSave({ token, refresh_token });
+        await tutorAdd(tutorData);
+        await authTokenAdd({ token, refresh_token });
       } catch (error) {
         throw error;
       } finally {
@@ -112,8 +110,8 @@ const AuthProvider = ({ children }: IAuthProviderProps) => {
 
       setTutor({} as ITutor);
 
-      await storageTutorRemove();
-      await storageAuthTokenRemove();
+      await tutorRemove();
+      await authTokenRemove();
     } catch (error) {
       throw error;
     } finally {
@@ -124,15 +122,15 @@ const AuthProvider = ({ children }: IAuthProviderProps) => {
   const updateTutor = useCallback(async (tutor: ITutor) => {
     setTutor(tutor);
 
-    await storageTutorSave(tutor);
+    await tutorAdd(tutor);
   }, []);
 
   const loadData = useCallback(async () => {
     try {
       setIsLoadingUserStorageData(true);
 
-      const tutorLogged = await storageTutorGet();
-      const { token, refresh_token } = await storageAuthTokenGet();
+      const tutorLogged = await tutorGet();
+      const { token, refresh_token } = await authTokenGet();
 
       if (tutorLogged && token && refresh_token) {
         api.defaults.headers.common.Authorization = `Bearer ${token}`;

@@ -5,8 +5,8 @@ import { AppError } from '@utils/app-error';
 import { API_URL } from '@env';
 
 import {
-  storageAuthTokenGet,
-  storageAuthTokenSave,
+  authTokenGet,
+  authTokenAdd,
 } from '@storage/storage-auth-token';
 
 /**
@@ -48,7 +48,7 @@ api.registerInterceptTokenManager = (signOut) => {
     async (requestError) => {
       // VERIFICANDO O TOKEN
       if (requestError?.response?.status === 401) {
-        const { refresh_token } = await storageAuthTokenGet();
+        const { refresh_token } = await authTokenGet();
 
         if (!refresh_token) {
           signOut();
@@ -97,7 +97,7 @@ api.registerInterceptTokenManager = (signOut) => {
               .then(async (response) => {
                 const data = response.data;
 
-                await storageAuthTokenSave({
+                await authTokenAdd({
                   token: data.token,
                   refresh_token: data.refresh_token,
                 });

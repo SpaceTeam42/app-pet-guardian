@@ -5,7 +5,7 @@ export default {
 
     'background-color': '#F7F7F7',
 
-    'blue-light-color': '#2ebfdc',
+    BLUE_100: '#2ebfdc',
 
     PINK_100: '#FFE3E1',
     PINK_200: '#E497A9',

@@ -7,7 +7,7 @@ interface IStorageAuthTokenProps {
   refresh_token: string;
 }
 
-export async function storageAuthTokenSave({
+export async function authTokenAdd({
   token,
   refresh_token,
 }: IStorageAuthTokenProps) {
@@ -17,7 +17,7 @@ export async function storageAuthTokenSave({
   );
 }
 
-export async function storageAuthTokenGet(): Promise<IStorageAuthTokenProps> {
+export async function authTokenGet(): Promise<IStorageAuthTokenProps> {
   const response = await AsyncStorage.getItem(AUTH_TOKEN_STORAGE);
 
   const { token, refresh_token }: IStorageAuthTokenProps = response
@@ -27,6 +27,6 @@ export async function storageAuthTokenGet(): Promise<IStorageAuthTokenProps> {
   return { token, refresh_token };
 }
 
-export async function storageAuthTokenRemove(): Promise<void> {
+export async function authTokenRemove(): Promise<void> {
   await AsyncStorage.removeItem(AUTH_TOKEN_STORAGE);
 }
