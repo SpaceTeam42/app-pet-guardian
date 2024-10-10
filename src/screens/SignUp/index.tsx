@@ -784,7 +784,7 @@ export function SignUpScreen() {
                   }}
                   style={{
                     placeholder: {
-                      color: theme.colors['black-color'],
+                      color: theme.COLORS.BLACK,
                     },
                     iconContainer: {
                       top: 13,
@@ -794,36 +794,36 @@ export function SignUpScreen() {
                       height: 50,
 
                       fontSize: 16,
-                      color: theme.colors['black-color'],
+                      color: theme.COLORS.BLACK,
 
                       paddingVertical: 10,
                       paddingHorizontal: 23,
 
                       borderWidth: 2,
-                      borderColor: theme.colors['gray-light-color'],
+                      borderColor: theme.COLORS.GRAY_200,
                       borderRadius: 8,
 
                       paddingRight: 30, // to ensure the text is never behind the icon
 
-                      backgroundColor: theme.colors['white-color'],
+                      backgroundColor: theme.COLORS.WHITE,
                     },
                     inputAndroid: {
                       width: '100%',
                       height: 50,
 
                       fontSize: 16,
-                      color: theme.colors['black-color'],
+                      color: theme.COLORS.BLACK,
 
                       paddingHorizontal: 23,
                       paddingVertical: 8,
 
                       borderWidth: 2,
-                      borderColor: theme.colors['gray-light-color'],
+                      borderColor: theme.COLORS.GRAY_200,
                       borderRadius: 8,
 
                       paddingRight: 30, // to ensure the text is never behind the icon
 
-                      backgroundColor: theme.colors['white-color'],
+                      backgroundColor: theme.COLORS.WHITE,
                     },
                   }}
                 />
@@ -855,7 +855,7 @@ export function SignUpScreen() {
                   }}
                   style={{
                     placeholder: {
-                      color: theme.colors['black-color'],
+                      color: theme.COLORS.BLACK,
                     },
                     iconContainer: {
                       top: 13,
@@ -865,36 +865,36 @@ export function SignUpScreen() {
                       height: 50,
 
                       fontSize: 16,
-                      color: theme.colors['black-color'],
+                      color: theme.COLORS.BLACK,
 
                       paddingVertical: 10,
                       paddingHorizontal: 23,
 
                       borderWidth: 2,
-                      borderColor: theme.colors['gray-light-color'],
+                      borderColor: theme.COLORS.GRAY_200,
                       borderRadius: 8,
 
                       paddingRight: 30, // to ensure the text is never behind the icon
 
-                      backgroundColor: theme.colors['white-color'],
+                      backgroundColor: theme.COLORS.WHITE,
                     },
                     inputAndroid: {
                       width: '100%',
                       height: 50,
 
                       fontSize: 16,
-                      color: theme.colors['black-color'],
+                      color: theme.COLORS.BLACK,
 
                       paddingHorizontal: 23,
                       paddingVertical: 8,
 
                       borderWidth: 2,
-                      borderColor: theme.colors['gray-light-color'],
+                      borderColor: theme.COLORS.GRAY_200,
                       borderRadius: 8,
 
                       paddingRight: 30, // to ensure the text is never behind the icon
 
-                      backgroundColor: theme.colors['white-color'],
+                      backgroundColor: theme.COLORS.WHITE,
                     },
                   }}
                 />
