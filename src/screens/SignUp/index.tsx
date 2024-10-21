@@ -19,6 +19,8 @@ import RNPickerSelect from 'react-native-picker-select';
 
 import * as ImagePicker from 'expo-image-picker';
 
+import * as FileSystem from 'expo-file-system';
+
 import { Image } from 'react-native-compressor';
 
 import Toast from 'react-native-toast-message';
@@ -413,12 +415,30 @@ export function SignUpScreen() {
       formData.append('city', selectedCity);
 
       if (photoTutor !== '') {
+        const photoInfo = await FileSystem.getInfoAsync(photoTutor);
+
+        if (photoInfo.exists) {
+          if (photoInfo.size) {
+            const photoSizeMegabyte = photoInfo.size / 1024 / 1024;
+
+            if (photoSizeMegabyte > 5) {
+              return Toast.show({
+                type: 'error',
+                text2: 'Essa imagem é muito grande. Escolha uma de até 5MB',
+                position: 'bottom',
+              });
+            }
+          }
+        }
+
+        const fileExtension = photoTutor.split('.').pop();
+
         const avatar = {
           name: `img_${formSubmitData.cnpj_cpf}_${new Date()
             .getTime()
-            .toString()}.jpg`,
-          type: 'image/*',
+            .toString()}.${fileExtension}`.toLowerCase(),
           uri: photoTutor,
+          type: `image/${fileExtension}`,
         } as any;
 
         formData.append('avatar', avatar);

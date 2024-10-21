@@ -23,7 +23,7 @@ export default {
     // 'orange-light-color': '#F1A661',
 
     BROWN_500: '#8F7668',
-    'light-brown-color': '#8F7668',
+    // 'light-brown-color': '#8F7668',
 
     RED_200: '#C53030',
     RED_700: '#791F34',
