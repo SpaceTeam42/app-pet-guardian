@@ -14,7 +14,7 @@ import { z as zod } from 'zod';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { useAuth } from '@hooks/auth';
 
@@ -24,7 +24,7 @@ import axios, { AxiosError } from 'axios';
 
 import { useTheme } from 'styled-components/native';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { ITutorDTO } from 'src/dtos/tutor-dto';
 
@@ -50,23 +50,6 @@ import {
   WhatsAppCheckButtonText,
 } from './styles';
 
-// type ITutor = {
-//   name: string;
-//   email: string;
-//   cnpj_cpf: string;
-//   personal_phone: string;
-//   personal_phone_is_whatsapp: boolean;
-//   public_phone: boolean;
-//   public_phone_is_whatsapp: boolean;
-//   street_name: string;
-//   street_number: string;
-//   complement: string;
-//   neighborhood: string;
-//   postal_code: string;
-//   state: string;
-//   city: string;
-// };
-
 interface ICity {
   nome: string;
 }
@@ -82,20 +65,6 @@ interface IResultViaCEP {
   uf: string;
   localidade: string;
 }
-
-// interface IFormSubmitData {
-//   name: string;
-//   cnpj_cpf: string;
-//   email: string;
-//   personal_phone: string;
-//   public_phone: string;
-//   postal_code: string;
-//   street_name: string;
-//   street_number: string;
-//   complement: string;
-//   neighborhood: string;
-//   reference: string;
-// }
 
 const editProfileFormSchema = zod.object({
   name: zod.string().min(1),
@@ -118,19 +87,20 @@ type IEditProfileFormData = zod.infer<typeof editProfileFormSchema>;
 export function EditProfileScreen() {
   const [isPersonalPhoneWhatsApp, setIsPersonalPhoneWhatsApp] = useState(false);
   const [isPublicPhoneWhatsApp, setIsPublicPhoneWhatsApp] = useState(false);
-  // const [searchPostalCode, setSearchPostalCode] = useState('');
-  const [selectedUF, setSelectedUF] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
   const [citiesSelectPicker, setCitiesSelectPicker] = useState<
     ICitySelectPicker[]
   >([]);
   const [loadingModal, setIsLoadingModal] = useState(false);
-  const [loading, setIsLoading] = useState(false);
+  // const [loading, setIsLoading] = useState(false);
 
   const { tutor, updateTutor } = useAuth();
   const theme = useTheme();
 
   const nameRef = useRef<TextInput>(null);
+  const streetNumberRef = useRef<TextInput>(null);
+  const neighborhoodRef = useRef<TextInput>(null);
+  const complementRef = useRef<TextInput>(null);
+  const referenceRef = useRef<TextInput>(null);
 
   // FORM
   const {
@@ -139,6 +109,7 @@ export function EditProfileScreen() {
     formState: { errors },
     reset,
     setValue,
+    setError,
     watch,
   } = useForm<IEditProfileFormData>({
     resolver: zodResolver(editProfileFormSchema),
@@ -147,7 +118,7 @@ export function EditProfileScreen() {
 
   const postalCode = watch('postal_code');
 
-  // USEQUERY
+  // USE QUERY
   const { data: profileData, isLoading: isLoadingProfile } = useQuery<
     ITutorDTO | undefined
   >({
@@ -158,11 +129,12 @@ export function EditProfileScreen() {
 
         const tutorData = response.data.tutor as ITutorDTO;
 
+        // REVIEW - USAR HOOK FORM PARA SETAR OS VALORES
         setIsPersonalPhoneWhatsApp(tutorData.personal_phone_is_whatsapp);
         setIsPublicPhoneWhatsApp(tutorData.public_phone_is_whatsapp);
-        setSearchPostalCode(tutorData.postal_code);
-        setSelectedUF(tutorData.state);
-        setSelectedCity(tutorData.city);
+        setValue('postal_code', tutorData.postal_code);
+        setValue('state', tutorData.state);
+        setValue('city', tutorData.city);
 
         return tutorData;
       } catch (err) {
@@ -170,7 +142,7 @@ export function EditProfileScreen() {
       }
     },
   });
-  // END USEQUERY
+  // END USE QUERY
 
   // MEMO
   const chevronIconSelectPicker = useMemo(() => {
@@ -260,7 +232,7 @@ export function EditProfileScreen() {
   const handleSelectedUF = useCallback(
     async (uf: string) => {
       setIsLoadingModal(true);
-      setValue('state', uf);
+      // setValue('state', uf);
       setValue('city', '');
 
       if (uf !== '') {
@@ -295,17 +267,17 @@ export function EditProfileScreen() {
     [setValue],
   );
 
-  const handleFormSubmit = useCallback(
-    async (formSubmitData: IEditProfileFormData) => {
-      try {
-        setIsLoading(true);
-
+  const { mutateAsync: editProfileMutate, isPending: isLoadingEditProfile } =
+    useMutation({
+      mutationFn: async (formSubmitData: IEditProfileFormData) => {
         if (formSubmitData.state === '') {
           Toast.show({
             type: 'error',
             position: 'bottom',
-            text2: 'Selecione um estados',
+            text2: 'Selecione um estado',
           });
+
+          setError('state', { message: 'Selecione um estado' });
 
           return;
         }
@@ -316,6 +288,8 @@ export function EditProfileScreen() {
             position: 'bottom',
             text2: 'Selecione uma cidade',
           });
+
+          setError('city', { message: 'Selecione uma cidade' });
 
           return;
         }
@@ -343,8 +317,8 @@ export function EditProfileScreen() {
             formSubmitData.reference !== '' && formSubmitData.reference !== null
               ? formSubmitData.reference
               : 'sem referência',
-          state: selectedUF,
-          city: selectedCity,
+          state: formSubmitData.state,
+          city: formSubmitData.city,
         };
 
         const response = await api.put('/tutors/update', editData);
@@ -354,17 +328,20 @@ export function EditProfileScreen() {
 
           await updateTutor(tutorData);
 
-          setIsLoading(false);
-
           Toast.show({
             type: 'success',
             position: 'bottom',
             text2: 'Informações atualizadas com sucesso!',
           });
         }
-      } catch (err) {
-        setIsLoading(false);
+      },
+    });
 
+  const handleFormSubmit = useCallback(
+    async (formSubmitData: IEditProfileFormData) => {
+      try {
+        await editProfileMutate(formSubmitData);
+      } catch (err) {
         if (err instanceof AxiosError) {
           if (err.response) {
             if (err.response.status === 400) {
@@ -384,14 +361,7 @@ export function EditProfileScreen() {
         });
       }
     },
-    [
-      isPersonalPhoneWhatsApp,
-      isPublicPhoneWhatsApp,
-      selectedCity,
-      selectedUF,
-      tutor.id,
-      updateTutor,
-    ],
+    [editProfileMutate],
   );
   // END FUNCTIONS
 
@@ -400,65 +370,101 @@ export function EditProfileScreen() {
       <Header title="Editar perfil" />
 
       {isLoadingProfile ? (
-        <SimpleLoading />
+        <Loading />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           <EditProfileContent>
             {profileData && (
-              <Form
-                ref={formRef}
-                initialData={profileData}
-                onSubmit={handleFormSubmit}
-              >
-                <Input
-                  ref={nameRef}
+              <>
+                <Controller
+                  control={control}
                   name="name"
-                  label="Nome"
-                  editable={!loading}
-                  autoCorrect={false}
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      ref={nameRef}
+                      label="Nome"
+                      editable={!isLoadingEditProfile}
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.name?.message}
+                    />
+                  )}
                 />
 
-                <InputMask
+                <Controller
+                  control={control}
                   name="cnpj_cpf"
-                  label="CPF"
-                  type="cpf"
-                  editable={!loading}
-                  keyboardType="numeric"
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <InputMask
+                      label="CPF"
+                      type="cpf"
+                      editable={!isLoadingEditProfile}
+                      keyboardType="numeric"
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.cnpj_cpf?.message}
+                    />
+                  )}
                 />
 
-                <Input
+                <Controller
+                  control={control}
                   name="email"
-                  label="E-mail"
-                  editable={!loading}
-                  autoCorrect={false}
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      ref={nameRef}
+                      label="E-mail"
+                      editable={!isLoadingEditProfile}
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.email?.message}
+                    />
+                  )}
                 />
 
                 <Label>
                   DDD + telefone (utilizado para entrarmos em contato)
                 </Label>
                 <BoxPhoneWhatsApp>
-                  <InputMask
-                    // ref={phoneRef}
+                  <Controller
+                    control={control}
                     name="personal_phone"
-                    type="cel-phone"
-                    editable={!loading}
-                    keyboardType="numeric"
-                    returnKeyType="next"
+                    render={({ field: { value, onChange } }) => (
+                      <InputMask
+                        type="cel-phone"
+                        editable={!isLoadingEditProfile}
+                        keyboardType="numeric"
+                        returnKeyType="next"
+                        value={value}
+                        onChangeText={(text) => {
+                          onChange(text);
+                        }}
+                        error={errors.personal_phone?.message}
+                      />
+                    )}
                   />
 
                   <WhatsAppCheckButton
                     onPress={handlePersonalPhoneWhatsAppCheck}
                   >
-                    <FeatherIcons
+                    <Feather
                       name={isPersonalPhoneWhatsApp ? 'check-square' : 'square'}
                       size={RFValue(25)}
                       color={
                         isPersonalPhoneWhatsApp
-                          ? theme.colors['primary-color']
-                          : theme.colors['gray-color']
+                          ? theme.COLORS['primary-color']
+                          : theme.COLORS.GRAY_500
                       }
                     />
 
@@ -468,23 +474,32 @@ export function EditProfileScreen() {
 
                 <Label>DDD + telefone (visível ao público)</Label>
                 <BoxPhoneWhatsApp>
-                  <InputMask
-                    // ref={phoneRef}
+                  <Controller
+                    control={control}
                     name="public_phone"
-                    type="cel-phone"
-                    editable={!loading}
-                    keyboardType="numeric"
-                    returnKeyType="next"
+                    render={({ field: { value, onChange } }) => (
+                      <InputMask
+                        type="cel-phone"
+                        editable={!isLoadingEditProfile}
+                        keyboardType="numeric"
+                        returnKeyType="next"
+                        value={value}
+                        onChangeText={(text) => {
+                          onChange(text);
+                        }}
+                        error={errors.public_phone?.message}
+                      />
+                    )}
                   />
 
                   <WhatsAppCheckButton onPress={handlePublicPhoneWhatsAppCheck}>
-                    <FeatherIcons
+                    <Feather
                       name={isPublicPhoneWhatsApp ? 'check-square' : 'square'}
                       size={RFValue(25)}
                       color={
                         isPublicPhoneWhatsApp
-                          ? theme.colors['primary-color']
-                          : theme.colors['gray-color']
+                          ? theme.COLORS['primary-color']
+                          : theme.COLORS.GRAY_500
                       }
                     />
 
@@ -493,214 +508,299 @@ export function EditProfileScreen() {
                 </BoxPhoneWhatsApp>
 
                 <BoxPostalCode>
-                  <InputMask
-                    // ref={postalCodeRef}
+                  <Controller
+                    control={control}
                     name="postal_code"
-                    label="CEP"
-                    type="zip-code"
-                    editable={!loading}
-                    value={searchPostalCode}
-                    onChangeText={(value) => {
-                      setSearchPostalCode(value);
-                    }}
-                    returnKeyType="next"
+                    render={({ field: { value, onChange } }) => (
+                      <InputMask
+                        label="CEP"
+                        type="zip-code"
+                        editable={!isLoadingEditProfile}
+                        keyboardType="numeric"
+                        returnKeyType="next"
+                        value={value}
+                        onChangeText={(text) => {
+                          onChange(text);
+                        }}
+                        error={errors.postal_code?.message}
+                      />
+                    )}
                   />
 
                   <SearchPostalCodeButton
                     onPress={handleSearchAddressByPostalCode}
                   >
-                    <FeatherIcons
+                    <Feather
                       name="search"
                       size={25}
-                      color={theme.colors['white-color']}
+                      color={theme.COLORS.WHITE}
                     />
                   </SearchPostalCodeButton>
                 </BoxPostalCode>
 
-                <Input
-                  // ref={streetNameRef}
+                <Controller
+                  control={control}
                   name="street_name"
-                  label="Endereço"
-                  autoCorrect={false}
-                  editable={!loading}
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      label="Endereço"
+                      editable={!isLoadingEditProfile}
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.street_name?.message}
+                      onSubmitEditing={() => {
+                        streetNumberRef.current?.focus();
+                      }}
+                    />
+                  )}
                 />
 
-                <Input
-                  // ref={streetNumberRef}
+                <Controller
+                  control={control}
                   name="street_number"
-                  label="Número"
-                  editable={!loading}
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      ref={streetNumberRef}
+                      label="Número"
+                      editable={!isLoadingEditProfile}
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.street_number?.message}
+                      onSubmitEditing={() => {
+                        neighborhoodRef.current?.focus();
+                      }}
+                    />
+                  )}
                 />
 
-                <Input
-                  // ref={neighborhoodRef}
+                <Controller
+                  control={control}
                   name="neighborhood"
-                  label="Bairro"
-                  editable={!loading}
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      ref={neighborhoodRef}
+                      label="Bairro"
+                      editable={!isLoadingEditProfile}
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.neighborhood?.message}
+                      onSubmitEditing={() => {
+                        complementRef.current?.focus();
+                      }}
+                    />
+                  )}
                 />
 
-                <Input
-                  // ref={complementRef}
+                <Controller
+                  control={control}
                   name="complement"
-                  label="Complemento"
-                  editable={!loading}
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      ref={complementRef}
+                      label="Bairro"
+                      editable={!isLoadingEditProfile}
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.complement?.message}
+                      onSubmitEditing={() => {
+                        referenceRef.current?.focus();
+                      }}
+                    />
+                  )}
                 />
 
-                <Input
-                  // ref={referenceRef}
+                <Controller
+                  control={control}
                   name="reference"
-                  label="Ponto de referência"
-                  editable={!loading}
-                  returnKeyType="next"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      ref={referenceRef}
+                      label="Ponto de referência"
+                      editable={!isLoadingEditProfile}
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                      }}
+                      error={errors.reference?.message}
+                    />
+                  )}
                 />
 
                 <BoxState>
                   <Label>Estado</Label>
 
-                  <RNPickerSelect
-                    placeholder={{
-                      label: 'Selecione um estado',
-                      value: '',
-                    }}
-                    useNativeAndroidPickerStyle={false}
-                    disabled={loading}
-                    items={loadUF()}
-                    onValueChange={(value) => handleSelectedUF(value)}
-                    value={selectedUF}
-                    Icon={() => {
-                      return chevronIconSelectPicker;
-                    }}
-                    style={{
-                      placeholder: {
-                        color: theme.colors['black-color'],
-                      },
-                      iconContainer: {
-                        top: 13,
-                        right: 3,
-                      },
-                      inputIOS: {
-                        height: 50,
+                  <Controller
+                    control={control}
+                    name="state"
+                    render={({ field: { value, onChange } }) => (
+                      <RNPickerSelect
+                        placeholder={{
+                          label: 'Selecione um estado',
+                          value: '',
+                        }}
+                        useNativeAndroidPickerStyle={false}
+                        disabled={isLoadingEditProfile}
+                        items={loadUF()}
+                        value={value}
+                        onValueChange={(value) => {
+                          onChange(value);
+                          handleSelectedUF(value);
+                        }}
+                        Icon={() => {
+                          return chevronIconSelectPicker;
+                        }}
+                        style={{
+                          placeholder: {
+                            color: theme.COLORS.BLACK,
+                          },
+                          iconContainer: {
+                            top: 13,
+                            right: 3,
+                          },
+                          inputIOS: {
+                            height: 50,
 
-                        fontSize: 16,
-                        color: theme.colors['black-color'],
+                            fontSize: 16,
+                            color: theme.COLORS.BLACK,
 
-                        paddingVertical: 10,
-                        paddingHorizontal: 23,
+                            paddingVertical: 10,
+                            paddingHorizontal: 23,
 
-                        borderWidth: 2,
-                        borderColor: theme.colors['gray-light-color'],
-                        borderRadius: 8,
+                            borderWidth: 2,
+                            borderColor: theme.COLORS.GRAY_200,
+                            borderRadius: 8,
 
-                        paddingRight: 30, // to ensure the text is never behind the icon
+                            paddingRight: 30, // to ensure the text is never behind the icon
 
-                        backgroundColor: theme.colors['white-color'],
-                      },
-                      inputAndroid: {
-                        width: '100%',
-                        height: 50,
+                            backgroundColor: theme.COLORS.WHITE,
+                          },
+                          inputAndroid: {
+                            width: '100%',
+                            height: 50,
 
-                        fontSize: 16,
-                        color: theme.colors['black-color'],
+                            fontSize: 16,
+                            color: theme.COLORS.BLACK,
 
-                        paddingHorizontal: 23,
-                        paddingVertical: 8,
+                            paddingHorizontal: 23,
+                            paddingVertical: 8,
 
-                        borderWidth: 2,
-                        borderColor: theme.colors['gray-light-color'],
-                        borderRadius: 8,
+                            borderWidth: 2,
+                            borderColor: theme.COLORS.GRAY_200,
+                            borderRadius: 8,
 
-                        paddingRight: 30, // to ensure the text is never behind the icon
+                            paddingRight: 30, // to ensure the text is never behind the icon
 
-                        backgroundColor: theme.colors['white-color'],
-                      },
-                    }}
+                            backgroundColor: theme.COLORS.WHITE,
+                          },
+                        }}
+                      />
+                    )}
                   />
                 </BoxState>
 
                 <BoxCity>
                   <Label>Cidade</Label>
 
-                  <RNPickerSelect
-                    placeholder={{
-                      label: 'Selecione uma cidade',
-                      value: '',
-                    }}
-                    useNativeAndroidPickerStyle={false}
-                    disabled={citiesSelectPicker.length === 0 || loading}
-                    items={citiesSelectPicker}
-                    onValueChange={(value) => setSelectedCity(value)}
-                    value={selectedCity}
-                    Icon={() => {
-                      return chevronIconSelectPicker;
-                    }}
-                    style={{
-                      placeholder: {
-                        color: theme.colors['black-color'],
-                      },
-                      iconContainer: {
-                        top: 13,
-                        right: 3,
-                      },
-                      inputIOS: {
-                        height: 50,
+                  <Controller
+                    control={control}
+                    name="city"
+                    render={({ field: { value, onChange } }) => (
+                      <RNPickerSelect
+                        placeholder={{
+                          label: 'Selecione uma cidade',
+                          value: '',
+                        }}
+                        useNativeAndroidPickerStyle={false}
+                        disabled={
+                          citiesSelectPicker.length === 0 ||
+                          isLoadingEditProfile
+                        }
+                        items={citiesSelectPicker}
+                        value={value}
+                        onValueChange={(value) => onChange(value)}
+                        Icon={() => {
+                          return chevronIconSelectPicker;
+                        }}
+                        style={{
+                          placeholder: {
+                            color: theme.colors['black-color'],
+                          },
+                          iconContainer: {
+                            top: 13,
+                            right: 3,
+                          },
+                          inputIOS: {
+                            height: 50,
 
-                        fontSize: 16,
-                        color: theme.colors['black-color'],
+                            fontSize: 16,
+                            color: theme.COLORS.BLACK,
 
-                        paddingVertical: 10,
-                        paddingHorizontal: 23,
+                            paddingVertical: 10,
+                            paddingHorizontal: 23,
 
-                        borderWidth: 2,
-                        borderColor: theme.colors['gray-light-color'],
-                        borderRadius: 8,
+                            borderWidth: 2,
+                            borderColor: theme.COLORS.GRAY_200,
+                            borderRadius: 8,
 
-                        paddingRight: 30, // to ensure the text is never behind the icon
+                            paddingRight: 30, // to ensure the text is never behind the icon
 
-                        backgroundColor: theme.colors['white-color'],
-                      },
-                      inputAndroid: {
-                        width: '100%',
-                        height: 50,
+                            backgroundColor: theme.COLORS.WHITE,
+                          },
+                          inputAndroid: {
+                            width: '100%',
+                            height: 50,
 
-                        fontSize: 16,
-                        color: theme.colors['black-color'],
+                            fontSize: 16,
+                            color: theme.COLORS.BLACK,
 
-                        paddingHorizontal: 23,
-                        paddingVertical: 8,
+                            paddingHorizontal: 23,
+                            paddingVertical: 8,
 
-                        borderWidth: 2,
-                        borderColor: theme.colors['gray-light-color'],
-                        borderRadius: 8,
+                            borderWidth: 2,
+                            borderColor: theme.COLORS.GRAY_200,
+                            borderRadius: 8,
 
-                        paddingRight: 30, // to ensure the text is never behind the icon
+                            paddingRight: 30, // to ensure the text is never behind the icon
 
-                        backgroundColor: theme.colors['white-color'],
-                      },
-                    }}
+                            backgroundColor: theme.COLORS.WHITE,
+                          },
+                        }}
+                      />
+                    )}
                   />
                 </BoxCity>
 
                 <Footer>
                   <Button
-                    onPress={() => {
-                      formRef.current?.submitForm();
-                    }}
+                    loading={isLoadingEditProfile}
+                    onPress={handleSubmit(handleFormSubmit)}
                   >
                     Salvar
                   </Button>
                 </Footer>
-              </Form>
+              </>
             )}
           </EditProfileContent>
         </ScrollView>
       )}
-
-      {/* TOAST AND DIALOGS */}
-      <ToastMessage />
     </EditProfileContainer>
   );
 }

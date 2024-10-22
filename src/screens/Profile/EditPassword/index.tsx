@@ -1,49 +1,58 @@
 import { useCallback, useRef } from 'react';
 
-import { Alert, ScrollView } from 'react-native';
+import { Alert, ScrollView, TextInput } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
 
-import { getValidationErrors } from '@utils/getValidationErrors';
-
 import { useMutation } from '@tanstack/react-query';
 
-import { api } from '@services/api';
+import { api } from '@libs/api';
 
-import { Form } from '@unform/mobile';
-import { FormHandles } from '@unform/core';
+import { Controller, useForm } from 'react-hook-form';
 
-import * as Yup from 'yup';
+import { z as zod } from 'zod';
+
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import { AxiosError } from 'axios';
 
 import Toast from 'react-native-toast-message';
 
 import { Header } from '@components/Header';
-import { Input } from '@components/Input';
-import { Button } from '@components/Button';
+import { Input } from '@components/Form/Input';
+import { Button } from '@components/Form/Button';
 
 import { EditPasswordContainer, EditPasswordContent } from './styles';
 
-interface IFormSubmitData {
-  old_password: string;
-  new_password: string;
-}
+const editPasswordFormSchema = zod
+  .object({
+    old_password: zod.string().min(1),
+    new_password: zod.string().min(1),
+    confirm_password: zod.string().min(1),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: 'A confirmação da senha não confere.',
+    path: ['confirm_password'],
+  });
 
-const schemaValidation = Yup.object().shape({
-  old_password: Yup.string().required('Informa a atual senha'),
-  new_password: Yup.string().required('Informe da nova senha'),
-  confirm_password: Yup.string().oneOf(
-    [Yup.ref('new_password'), null],
-    'A senha de confirmação não é igual a senha digitada',
-  ),
-});
+type IEditPasswordFormData = zod.infer<typeof editPasswordFormSchema>;
 
 export const EditPasswordScreen = () => {
   const navigation = useNavigation();
 
+  const oldPasswordRef = useRef<TextInput>(null);
+  const newPasswordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+
   // FORM
-  const formRef = useRef<FormHandles>(null);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<IEditPasswordFormData>({
+    resolver: zodResolver(editPasswordFormSchema),
+  });
   // END FORM
 
   // USE MUTATION
@@ -51,7 +60,10 @@ export const EditPasswordScreen = () => {
     mutateAsync: changePasswordMutate,
     isPending: isLoadingChangePassword,
   } = useMutation({
-    mutationFn: async ({ old_password, new_password }: IFormSubmitData) => {
+    mutationFn: async ({
+      old_password,
+      new_password,
+    }: IEditPasswordFormData) => {
       const data = {
         old_password,
         password: new_password,
@@ -61,9 +73,9 @@ export const EditPasswordScreen = () => {
 
       return response;
     },
-    onSuccess: response => {
+    onSuccess: (response) => {
       if (response.status === 204) {
-        formRef.current?.reset();
+        reset();
 
         Alert.alert(
           'Atualização de senha',
@@ -73,7 +85,7 @@ export const EditPasswordScreen = () => {
               text: 'OK',
               style: 'default',
               onPress: () => {
-                navigation.navigate('ProfileScreen');
+                navigation.navigate('profileScreen');
               },
             },
           ],
@@ -84,22 +96,10 @@ export const EditPasswordScreen = () => {
   // END USE MUTATION
 
   const handleChangePassword = useCallback(
-    async (formSubmitData: IFormSubmitData) => {
+    async (formSubmitData: IEditPasswordFormData) => {
       try {
-        formRef.current?.setErrors({});
-
-        await schemaValidation.validate(formSubmitData, { abortEarly: false });
-
         await changePasswordMutate(formSubmitData);
       } catch (err) {
-        if (err instanceof Yup.ValidationError) {
-          const errors = getValidationErrors(err);
-
-          formRef.current?.setErrors(errors);
-
-          return;
-        }
-
         if (err instanceof AxiosError) {
           if (err.response) {
             if (err.response.status === 400) {
@@ -109,6 +109,8 @@ export const EditPasswordScreen = () => {
                 text2: 'Ops! Verifique as informações e tente novamente.',
               });
             }
+
+            return;
           }
         }
 
@@ -128,34 +130,70 @@ export const EditPasswordScreen = () => {
 
       <ScrollView>
         <EditPasswordContent>
-          <Form ref={formRef} onSubmit={handleChangePassword}>
-            <Input
-              name="old_password"
-              label="Senha atual"
-              secureTextFieldEntry
-            />
+          <Controller
+            control={control}
+            name="old_password"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={oldPasswordRef}
+                label="Senha atual"
+                secureTextFieldEntry
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                }}
+                error={errors.old_password?.message}
+                onSubmitEditing={() => {
+                  newPasswordRef.current?.focus();
+                }}
+              />
+            )}
+          />
 
-            <Input
-              name="new_password"
-              label="Nova senha"
-              secureTextFieldEntry
-            />
+          <Controller
+            control={control}
+            name="new_password"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={newPasswordRef}
+                label="Nova senha"
+                secureTextFieldEntry
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                }}
+                error={errors.new_password?.message}
+                onSubmitEditing={() => {
+                  confirmPasswordRef.current?.focus();
+                }}
+              />
+            )}
+          />
 
-            <Input
-              name="confirm_password"
-              label="Confirme nova senha"
-              secureTextFieldEntry
-            />
+          <Controller
+            control={control}
+            name="confirm_password"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                ref={newPasswordRef}
+                label="Confirme nova senha"
+                secureTextFieldEntry
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                }}
+                error={errors.new_password?.message}
+                onSubmitEditing={handleSubmit(handleChangePassword)}
+              />
+            )}
+          />
 
-            <Button
-              loading={isLoadingChangePassword}
-              onPress={() => {
-                formRef.current?.submitForm();
-              }}
-            >
-              Alterar
-            </Button>
-          </Form>
+          <Button
+            loading={isLoadingChangePassword}
+            onPress={handleSubmit(handleChangePassword)}
+          >
+            Alterar
+          </Button>
         </EditPasswordContent>
       </ScrollView>
     </EditPasswordContainer>
