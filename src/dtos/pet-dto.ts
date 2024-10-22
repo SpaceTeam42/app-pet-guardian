@@ -1,4 +1,4 @@
-import { ITutor } from './tutor-dto';
+import { ITutorDTO } from './tutor-dto';
 
 type IPetImages = {
   id: string;
@@ -17,7 +17,7 @@ export type IPetDTO = {
   description: string;
   city: string;
   state: string;
-  tutor: ITutor;
+  tutor: ITutorDTO;
   avatar_url: string;
   pet_images: Array<IPetImages>;
 };

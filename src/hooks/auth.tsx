@@ -7,7 +7,7 @@ import {
   ReactNode,
 } from 'react';
 
-import { ITutor } from 'src/dtos/tutor-dto';
+import { ITutorDTO } from 'src/dtos/tutor-dto';
 
 import { api } from '@libs/api';
 
@@ -20,7 +20,7 @@ import {
 } from '@storage/storage-auth-token';
 
 interface IAuthState {
-  tutor: ITutor;
+  tutor: ITutorDTO;
   token: string;
   refresh_token: string;
 }
@@ -31,11 +31,11 @@ interface ICredentials {
 }
 
 interface IAuthContextDataProps {
-  tutor: ITutor;
+  tutor: ITutorDTO;
   isLoadingStorageData: boolean;
   signIn({ email, password }: ICredentials): Promise<void>;
   signOut(): Promise<void>;
-  updateTutor(tutor: ITutor): Promise<void>;
+  updateTutor(tutor: ITutorDTO): Promise<void>;
 }
 
 interface IAuthProviderProps {
@@ -47,13 +47,13 @@ const AuthContext = createContext<IAuthContextDataProps>(
 );
 
 const AuthProvider = ({ children }: IAuthProviderProps) => {
-  const [tutor, setTutor] = useState<ITutor>({} as ITutor);
+  const [tutor, setTutor] = useState<ITutorDTO>({} as ITutorDTO);
   const [isLoadingUserStorageData, setIsLoadingUserStorageData] =
     useState(true);
 
   // FUNCTIONS
   const userAndTokenUpdate = useCallback(
-    async (tutorData: ITutor, token: string) => {
+    async (tutorData: ITutorDTO, token: string) => {
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
       setTutor(tutorData);
@@ -62,7 +62,7 @@ const AuthProvider = ({ children }: IAuthProviderProps) => {
   );
 
   const storageUserAndTokenSave = useCallback(
-    async (tutorData: ITutor, token: string, refresh_token: string) => {
+    async (tutorData: ITutorDTO, token: string, refresh_token: string) => {
       try {
         setIsLoadingUserStorageData(true);
 
@@ -108,7 +108,7 @@ const AuthProvider = ({ children }: IAuthProviderProps) => {
     try {
       setIsLoadingUserStorageData(true);
 
-      setTutor({} as ITutor);
+      setTutor({} as ITutorDTO);
 
       await tutorRemove();
       await authTokenRemove();
@@ -119,7 +119,7 @@ const AuthProvider = ({ children }: IAuthProviderProps) => {
     }
   }, []);
 
-  const updateTutor = useCallback(async (tutor: ITutor) => {
+  const updateTutor = useCallback(async (tutor: ITutorDTO) => {
     setTutor(tutor);
 
     await tutorAdd(tutor);

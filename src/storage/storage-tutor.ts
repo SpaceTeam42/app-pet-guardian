@@ -1,17 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { ITutor } from 'src/dtos/tutor-dto';
+import { ITutorDTO } from 'src/dtos/tutor-dto';
 
 import { TUTOR_STORAGE } from './storage-config';
 
-export async function tutorAdd(tutor: ITutor): Promise<void> {
+export async function tutorAdd(tutor: ITutorDTO): Promise<void> {
   await AsyncStorage.setItem(TUTOR_STORAGE, JSON.stringify(tutor));
 }
 
-export async function tutorGet(): Promise<ITutor> {
+export async function tutorGet(): Promise<ITutorDTO> {
   const storage = await AsyncStorage.getItem(TUTOR_STORAGE);
 
-  const tutor: ITutor = storage ? JSON.parse(storage) : {};
+  const tutor: ITutorDTO = storage ? JSON.parse(storage) : {};
 
   return tutor;
 }
