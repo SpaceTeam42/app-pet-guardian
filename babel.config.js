@@ -31,6 +31,12 @@ module.exports = function(api) {
           }
         }
       ],
+      [
+        'inline-import',
+        {
+          extensions: ['.md', '.mdx'],
+        },
+      ],
       'react-native-reanimated/plugin',
     ]
   };

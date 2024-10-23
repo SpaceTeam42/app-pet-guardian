@@ -6,8 +6,8 @@ import { useTheme } from 'styled-components/native';
 import { DetailPetScreen } from '@screens/DetailPet';
 
 // ADOPTION
-import { AdoptMeScannerScreen } from '@screens/Adoptions/AdoptMeScanner';
-import { FinishAdoptMeScreen } from '@screens/Adoptions/FinishAdoption';
+// import { AdoptMeScannerScreen } from '@screens/Adoptions/AdoptMeScanner';
+// import { FinishAdoptMeScreen } from '@screens/Adoptions/FinishAdoption';
 
 import { SignInScreen } from '@screens/SignIn';
 import { SignUpScreen } from '@screens/SignUp';
@@ -48,9 +48,9 @@ const AppRoutes = () => {
       <Screen name="detailPetScreen" component={DetailPetScreen} />
 
       {/* ADOPTION */}
-      <Screen name="adoptMeScannerScreen" component={AdoptMeScannerScreen} />
+      {/* <Screen name="adoptMeScannerScreen" component={AdoptMeScannerScreen} /> */}
 
-      <Screen name="finishAdoptMeScreen" component={FinishAdoptMeScreen} />
+      {/* <Screen name="finishAdoptMeScreen" component={FinishAdoptMeScreen} /> */}
       {/* END ADOPTION */}
 
       <Screen name="signInScreen" component={SignInScreen} />
