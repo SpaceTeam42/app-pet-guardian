@@ -21,7 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import * as FileSystem from 'expo-file-system';
 
-import { Image } from 'react-native-compressor';
+// import { Image } from 'react-native-compressor';
 
 import Toast from 'react-native-toast-message';
 
@@ -187,17 +187,18 @@ export function SignUpScreen() {
     }
 
     if (photoSelected.assets[0].uri) {
-      const responseImageCompressor = await Image.compress(
-        photoSelected.assets[0].uri,
-        {
-          quality: 0.8,
-          output: 'jpg',
-        },
-      );
+      // const responseImageCompressor = await Image.compress(
+      //   photoSelected.assets[0].uri,
+      //   {
+      //     quality: 0.8,
+      //     output: 'jpg',
+      //   },
+      // );
 
       handleToggleTakePhotoTutorModal();
 
-      setPhotoTutor(responseImageCompressor);
+      // setPhotoTutor(responseImageCompressor);
+      setPhotoTutor(photoSelected.assets[0].uri);
     }
   }, [handleToggleTakePhotoTutorModal]);
 
@@ -214,17 +215,18 @@ export function SignUpScreen() {
     }
 
     if (photoSelected.assets[0].uri) {
-      const responseImageCompressor = await Image.compress(
-        photoSelected.assets[0].uri,
-        {
-          quality: 0.8,
-          output: 'jpg',
-        },
-      );
+      // const responseImageCompressor = await Image.compress(
+      //   photoSelected.assets[0].uri,
+      //   {
+      //     quality: 0.8,
+      //     output: 'jpg',
+      //   },
+      // );
 
       handleToggleTakePhotoTutorModal();
 
-      setPhotoTutor(responseImageCompressor);
+      // setPhotoTutor(responseImageCompressor);
+      setPhotoTutor(photoSelected.assets[0].uri);
     }
   }, [handleToggleTakePhotoTutorModal]);
 
@@ -510,7 +512,7 @@ export function SignUpScreen() {
                     // uri: 'https://images.unsplash.com/photo-1581888227599-779811939961?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80',
                     uri: photoTutor,
                   }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               )}
 

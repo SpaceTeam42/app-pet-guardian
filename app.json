@@ -30,7 +30,8 @@
         {
           "photosPermission": "Permita que o aplicativo acesse suas fotos."
         }
-      ]
+      ],
+      "react-native-compressor"
     ]
   }
 }

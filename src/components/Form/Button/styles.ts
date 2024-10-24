@@ -27,7 +27,7 @@ export const Container = styled(TouchableOpacity)<IContainerProps>`
 `;
 
 export const ButtonText = styled.Text`
-  font-family: ${({ theme }) => theme.fonts.regular};
+  font-family: ${({ theme }) => theme.FONTS.REGULAR};
   font-size: ${RFValue(20)}px;
   color: ${({ theme }) => theme.COLORS.WHITE};
   text-transform: uppercase;

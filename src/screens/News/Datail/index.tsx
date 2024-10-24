@@ -10,7 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 
 import Toast from 'react-native-toast-message';
 
-import { RenderMdx } from 'rn-mdx';
+// import { RenderMdx } from 'rn-mdx';
+import Markdown from 'react-native-markdown-display';
 
 import { INewsDTO } from 'src/dtos/news-dto';
 
@@ -75,7 +76,14 @@ const DetailNewsScreen = () => {
       {isLoadingNews ? (
         <Loading />
       ) : (
-        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          style={{
+            // flex: 1,
+            height: '100%',
+          }}
+          showsVerticalScrollIndicator={false}
+        >
           {news && (
             <DetailNewsContent>
               <Title>{news.title}</Title>
@@ -83,9 +91,9 @@ const DetailNewsScreen = () => {
                 Por: {news.writer.name} - {news.since_created_at}
               </WriterText>
 
-              <NewsImage source={{ uri: news.image_url }} resizeMode="cover" />
+              <NewsImage source={{ uri: news.image_url }} contentFit="cover" />
 
-              <RenderMdx>{news.content}</RenderMdx>
+              <Markdown>{news.content}</Markdown>
             </DetailNewsContent>
           )}
         </ScrollView>

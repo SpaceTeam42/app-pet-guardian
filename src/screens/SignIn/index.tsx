@@ -114,7 +114,7 @@ export function SignInScreen() {
       >
         <Content>
           <BoxLogo>
-            <LogoImage source={logoImg} resizeMode="contain" />
+            <LogoImage source={logoImg} contentFit="contain" />
           </BoxLogo>
 
           <SignInTitle>

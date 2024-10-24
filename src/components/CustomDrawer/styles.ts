@@ -47,10 +47,6 @@ export const ProfileName = styled.Text`
     font-size: ${RFValue(theme.FONT_SIZE.LG)}px;
     color: ${theme.COLORS.WHITE};
   `};
-
-  /* font-family: ${({ theme }) => theme.FONTS.REGULAR};
-  font-size: ${RFValue(22)}px;
-  color: ${({ theme }) => theme.COLORS.WHITE}; */
 `;
 
 export const ProfileEmail = styled.Text`
@@ -59,9 +55,7 @@ export const ProfileEmail = styled.Text`
     font-size: ${theme.FONT_SIZE.SM}px;
     color: ${({ theme }) => theme.COLORS.WHITE};
   `}
-  /* font-family: ${({ theme }) => theme.fonts.regular};
-  font-size: ${RFValue(14)}px;
-  color: ${({ theme }) => theme.COLORS.WHITE}; */
+
   line-height: ${RFValue(15)}px;
 `;
 
@@ -75,9 +69,7 @@ export const SignInButtonText = styled.Text`
     font-size: ${theme.FONT_SIZE.LG}px;
     color: ${theme.COLORS.WHITE};
   `}
-  /* font-family: ${({ theme }) => theme.fonts.bold};
-  font-size: ${RFValue(22)}px;
-  color: ${({ theme }) => theme.colors['white-color']}; */
+
   text-decoration: underline;
 `;
 

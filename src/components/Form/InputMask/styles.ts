@@ -23,9 +23,6 @@ export const InputLabel = styled.Text`
     font-size: ${RFValue(theme.FONT_SIZE.MD)}px;
     color: ${theme.COLORS.BLACK};
   `};
-  /* font-family: ${({ theme }) => theme.fonts.regular};
-  font-size: ${RFValue(15)}px;
-  color: ${({ theme }) => theme.colors['black-color']}; */
 `;
 
 export const InputContent = styled(View)<IContentProps>`

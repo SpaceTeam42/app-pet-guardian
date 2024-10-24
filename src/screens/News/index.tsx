@@ -8,7 +8,8 @@ import { ptBR } from 'date-fns/locale/pt-BR';
 
 import { useQuery } from '@tanstack/react-query';
 
-import { RenderMdx } from 'rn-mdx';
+// import { RenderMdx } from 'rn-mdx';
+import Markdown from 'react-native-markdown-display';
 
 import Toast from 'react-native-toast-message';
 
@@ -149,20 +150,18 @@ const NewsScreen = () => {
               >
                 <NewsImage
                   source={{ uri: newsItem.image_url }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
 
                 <NewsInfo>
                   <NewsTitle>{newsItem.title}</NewsTitle>
                   <WriterText>Por: {newsItem.writer.name}</WriterText>
 
-                  <RenderMdx components={{ NewsText }}>
-                    {`
-                      <NewsText numberOfLines={3} ellipsizeMode="tail" >
-                        *${newsItem.description}*
-                      </NewsText>
-                    `}
-                  </RenderMdx>
+                  <Markdown>
+                    <NewsText numberOfLines={3} ellipsizeMode="tail">
+                      {newsItem.description}
+                    </NewsText>
+                  </Markdown>
                 </NewsInfo>
               </NewsBox>
             )}

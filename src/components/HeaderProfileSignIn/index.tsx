@@ -50,7 +50,7 @@ export function HeaderProfileSignIn() {
             source={{
               uri: tutor.avatar_url ? tutor.avatar_url : noImage(tutor.name),
             }}
-            resizeMode="cover"
+            contentFit="cover"
           />
         ) : (
           <ProfileWithoutUserBoxAvatar>

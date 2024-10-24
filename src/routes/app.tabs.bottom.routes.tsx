@@ -18,7 +18,7 @@ const AppBottomTab = () => {
 
   return (
     <Navigator
-      initialRouteName="HomeScreen"
+      initialRouteName="homeScreen"
       backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: theme.COLORS.PINK_200,
@@ -37,12 +37,8 @@ const AppBottomTab = () => {
         name="homeScreen"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons
-              name="paw"
-              size={RFValue(30)}
-              color={color}
-            />
+          tabBarIcon: () => (
+            <MaterialCommunityIcons name="paw" size={RFValue(30)} />
           ),
         }}
       />
@@ -51,11 +47,10 @@ const AppBottomTab = () => {
         name="newsScreen"
         component={NewsScreen}
         options={{
-          tabBarIcon: ({ color }) => (
+          tabBarIcon: () => (
             <MaterialCommunityIcons
               name="newspaper-variant"
               size={RFValue(30)}
-              color={color}
             />
           ),
         }}
@@ -65,12 +60,8 @@ const AppBottomTab = () => {
         name="lookingForPetsScreen"
         component={LookingForPetsScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons
-              name="magnify-expand"
-              size={RFValue(30)}
-              color={color}
-            />
+          tabBarIcon: () => (
+            <MaterialCommunityIcons name="magnify-expand" size={RFValue(30)} />
           ),
         }}
       />
@@ -79,12 +70,8 @@ const AppBottomTab = () => {
         name="favoritesScreen"
         component={FavoritesScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons
-              name="heart"
-              size={RFValue(30)}
-              color={color}
-            />
+          tabBarIcon: () => (
+            <MaterialCommunityIcons name="heart" size={RFValue(30)} />
           ),
         }}
       />

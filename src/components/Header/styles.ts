@@ -33,9 +33,7 @@ export const HeaderTitle = styled.Text`
     font-size: ${theme.FONT_SIZE.MD}px;
     color: ${theme.COLORS.BLACK};
   `}
-  /* font-family: ${({ theme }) => theme.fonts.regular};
-  font-size: ${RFValue(17)}px;
-  color: ${({ theme }) => theme.colors['black-color']}; */
+
   line-height: ${RFValue(25)}px;
 
   margin-left: ${RFValue(5)}px;

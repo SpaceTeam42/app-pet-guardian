@@ -44,7 +44,7 @@ export function ImageSlider({ imagesUrl }: IImageSliderProps) {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <PetImageWrapper>
-            <PetImage source={{ uri: item.photo }} resizeMode="cover" />
+            <PetImage source={{ uri: item.photo }} contentFit="cover" />
           </PetImageWrapper>
         )}
         onViewableItemsChanged={indexChanged.current}

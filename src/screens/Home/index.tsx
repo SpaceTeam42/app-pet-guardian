@@ -427,7 +427,7 @@ export function HomeScreen() {
                     >
                       <CategoryButtonImage
                         source={{ uri: category.icon_url }}
-                        resizeMode="contain"
+                        contentFit="contain"
                       />
                     </CategoryButton>
                   )}
@@ -480,7 +480,7 @@ export function HomeScreen() {
                       >
                         <PetPhoto
                           source={{ uri: pet.avatar_url }}
-                          resizeMode="cover"
+                          contentFit="cover"
                         />
 
                         <PetInformation>

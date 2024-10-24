@@ -14,7 +14,7 @@ export function AboutScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <AboutContent>
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <LogoImage source={logoImg} resizeMode="contain" />
+            <LogoImage source={logoImg} contentFit="contain" />
           </View>
 
           <AboutText>

@@ -242,7 +242,7 @@ export function LookingForPetsScreen() {
                   >
                     <PetPhoto
                       source={{ uri: pet.avatar_url }}
-                      resizeMode="cover"
+                      contentFit="cover"
                     />
 
                     <PetInformation>

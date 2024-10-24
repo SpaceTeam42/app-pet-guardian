@@ -483,7 +483,7 @@ const DetailPetScreen = () => {
                   <TutorInfo>
                     <TutorPhoto
                       source={{ uri: pet.tutor.avatar_url }}
-                      resizeMode="cover"
+                      contentFit="cover"
                     />
                     <TutorName>{pet.tutor.name}</TutorName>
                   </TutorInfo>

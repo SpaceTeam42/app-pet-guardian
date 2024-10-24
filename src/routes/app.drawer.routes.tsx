@@ -23,17 +23,17 @@ const AppDrawerRoutes = () => {
         drawerActiveTintColor: theme.COLORS.WHITE,
         drawerInactiveTintColor: theme.COLORS.GRAY_500,
         drawerLabelStyle: {
-          fontFamily: theme.fonts.regular,
+          fontFamily: theme.FONTS.REGULAR,
         },
       }}
     >
-      <Screen
+      {/* <Screen
         name="homeTabs"
         component={AppBottomTab}
         options={{
           title: 'Início',
         }}
-      />
+      /> */}
 
       <Screen
         name="aboutScreen"

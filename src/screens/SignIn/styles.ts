@@ -86,6 +86,6 @@ export const ForgotPasswordButton = styled(TouchableOpacity).attrs({
 `;
 
 export const ForgotPasswordButtonText = styled.Text`
-  font-family: ${({ theme }) => theme.fonts.regular};
+  font-family: ${({ theme }) => theme.FONTS.REGULAR};
   font-size: ${RFValue(17)}px;
 `;

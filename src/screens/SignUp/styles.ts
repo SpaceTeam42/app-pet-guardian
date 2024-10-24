@@ -136,7 +136,7 @@ export const SearchPostalCodeButton = styled(TouchableOpacity).attrs({
 `;
 
 export const Label = styled.Text`
-  font-family: ${({ theme }) => theme.fonts.regular};
+  font-family: ${({ theme }) => theme.FONTS.REGULAR};
   font-size: ${RFValue(15)}px;
   color: ${({ theme }) => theme.COLORS.BLACK};
 `;

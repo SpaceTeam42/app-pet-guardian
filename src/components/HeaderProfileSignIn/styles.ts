@@ -1,10 +1,8 @@
 import styled from 'styled-components/native';
 
-import {
-  Image,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+
+import { Image } from 'expo-image';
 
 import { RFValue } from 'react-native-responsive-fontsize';
 
